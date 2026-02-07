@@ -1,61 +1,135 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Users, Briefcase, MapPin, ClipboardList, Plus } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { Users, Briefcase, MapPin, ClipboardList, Plus, ChevronRight, Activity } from 'lucide-react';
 
 export default function CompanyDashboard() {
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    operators: 0,
+    customers: 0,
+    branches: 0,
+    tasks: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    { title: 'Operatörler', value: '0', icon: Users, color: 'bg-blue-500' },
-    { title: 'Müşteriler', value: '0', icon: Briefcase, color: 'bg-green-500' },
-    { title: 'Şubeler', value: '0', icon: MapPin, color: 'bg-purple-500' },
-    { title: 'İşlemler', value: '0', icon: ClipboardList, color: 'bg-orange-500' },
+  // Veritabanından gerçek sayıları çekme
+  const fetchStats = async () => {
+    if (!user?.companyId) return;
+    
+    setLoading(true);
+    // Operatör sayısı (profiles tablosunda bu companyId'ye sahip operatörler)
+    const { count: opCount } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', user.companyId)
+      .eq('role', 'operator');
+
+    // Müşteri sayısı
+    const { count: cusCount } = await supabase
+      .from('customers')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', user.companyId);
+
+    setStats({
+      operators: opCount || 0,
+      customers: cusCount || 0,
+      branches: 0, // Şubeler tablon varsa buradan çekebilirsin
+      tasks: 0     // İşlemler tablon varsa buradan çekebilirsin
+    });
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, [user]);
+
+  const statItems = [
+    { title: 'Operatörler', value: stats.operators, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'Müşteriler', value: stats.customers, icon: Briefcase, color: 'text-green-600', bg: 'bg-green-50' },
+    { title: 'Şubeler', value: stats.branches, icon: MapPin, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { title: 'İşlemler', value: stats.tasks, icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50' },
   ];
 
   return (
-    <div className="p-4 md:p-6 space-y-6 pb-24 md:pb-6">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-700 to-indigo-900 p-6 md:p-8 rounded-3xl text-white shadow-lg">
-        <h1 className="text-2xl md:text-3xl font-bold">Hoş Geldiniz, {user?.firstName}</h1>
-        <p className="opacity-80 mt-1 text-sm md:text-base font-medium">
-          {user?.companyName || 'Yönetim Paneli'}
+    <div className="w-full min-h-screen bg-white pb-24">
+      {/* Üst Karşılama - Kutusuz, Modern Header */}
+      <div className="p-6 md:p-10 border-b border-gray-50 bg-gray-50/30">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="bg-blue-600 p-2 rounded-xl text-white">
+            <Activity size={20} />
+          </div>
+          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Yönetim Merkezi</span>
+        </div>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
+          HOŞ GELDİN, {user?.firstName}
+        </h1>
+        <p className="text-slate-400 font-bold mt-1 uppercase text-xs tracking-wider flex items-center gap-2">
+          {user?.companies?.name || 'Pest360 Firma Paneli'} 
+          <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
         </p>
       </div>
 
-      {/* Stats Grid - Mobilde 2 sütun, Masaüstünde 4 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center md:items-start gap-3 text-center md:text-left">
-            <div className={`${stat.color} p-3 rounded-xl text-white shrink-0`}>
-              <stat.icon size={20} className="md:w-6 md:h-6" />
-            </div>
-            <div>
-              <p className="text-[10px] md:text-sm text-gray-500 font-bold uppercase tracking-wider">{stat.title}</p>
-              <p className="text-lg md:text-2xl font-black text-gray-800">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Action Buttons & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold mb-4 text-gray-800">Hızlı İşlemler</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button className="flex items-center justify-center gap-2 p-4 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-all active:scale-95 border border-blue-200">
-              <Plus size={18} /> Operatör Ekle
-            </button>
-            <button className="flex items-center justify-center gap-2 p-4 bg-green-50 text-green-700 rounded-xl font-bold hover:bg-green-100 transition-all active:scale-95 border border-green-200">
-              <Plus size={18} /> Müşteri Ekle
-            </button>
-          </div>
-        </div>
+      <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto">
         
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[150px] flex flex-col items-center justify-center text-center">
-          <div className="bg-gray-50 p-4 rounded-full mb-2">
-            <ClipboardList className="text-gray-300" size={32} />
+        {/* İstatistikler - Mobilde 2 sütun, çerçevesiz şık kartlar */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+          {statItems.map((stat, index) => (
+            <div key={index} className="flex flex-col gap-2 p-2 group cursor-default">
+              <div className={`${stat.bg} ${stat.color} w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300`}>
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.title}</p>
+                <p className="text-3xl font-black text-slate-900 leading-none mt-1">
+                  {loading ? '...' : stat.value}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          
+          {/* Hızlı İşlemler - Modern Aksiyon Listesi */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] px-2">Hızlı Aksiyonlar</h3>
+            <div className="grid grid-cols-1 gap-3">
+              <button className="flex items-center justify-between p-6 bg-blue-50/50 hover:bg-blue-600 group transition-all rounded-[2rem] border border-blue-100/50">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white p-3 rounded-2xl text-blue-600 shadow-sm group-hover:scale-110 transition-transform">
+                    <Users size={24} />
+                  </div>
+                  <span className="font-black text-slate-800 group-hover:text-white uppercase tracking-tight">Yeni Operatör Tanımla</span>
+                </div>
+                <ChevronRight size={24} className="text-blue-200 group-hover:text-white" />
+              </button>
+
+              <button className="flex items-center justify-between p-6 bg-green-50/50 hover:bg-green-600 group transition-all rounded-[2rem] border border-green-100/50">
+                <div className="flex items-center gap-4">
+                  <div className="bg-white p-3 rounded-2xl text-green-600 shadow-sm group-hover:scale-110 transition-transform">
+                    <Briefcase size={24} />
+                  </div>
+                  <span className="font-black text-slate-800 group-hover:text-white uppercase tracking-tight">Yeni Müşteri Kaydı</span>
+                </div>
+                <ChevronRight size={24} className="text-green-200 group-hover:text-white" />
+              </button>
+            </div>
           </div>
-          <p className="text-gray-400 text-sm italic">Son aktiviteler henüz bulunmuyor.</p>
+
+          {/* Aktivite Akışı - Temiz Liste */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] px-2">Son Aktiviteler</h3>
+            <div className="bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200 p-10 flex flex-col items-center justify-center text-center">
+              <div className="bg-white p-5 rounded-full shadow-sm mb-4">
+                <ClipboardList className="text-slate-200" size={40} />
+              </div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest leading-loose">
+                Henüz bir operasyonel kayıt<br/>bulunmuyor.
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
