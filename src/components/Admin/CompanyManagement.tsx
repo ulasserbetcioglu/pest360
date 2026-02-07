@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { 
-  Building2, Plus, X, Mail, Key, Eye, EyeOff,
-  Trash2, Edit3, Clock, Power, CalendarPlus, ChevronRight
+  Plus, Mail, Eye, EyeOff, Trash2, CalendarPlus, Power, Building2 
 } from 'lucide-react';
 
 export default function CompanyManagement() {
@@ -10,10 +9,7 @@ export default function CompanyManagement() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPasswords, setShowPasswords] = useState<{[key: string]: boolean}>({});
-  
-  const [formData, setFormData] = useState({
-    name: '', email: '', password: '', authorized_person: ''
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', authorized_person: '' });
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -23,13 +19,6 @@ export default function CompanyManagement() {
   };
 
   useEffect(() => { fetchCompanies(); }, []);
-
-  const getTrialStatus = (endDate: string) => {
-    const remaining = Math.ceil((new Date(endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    return remaining > 0 
-      ? { label: `${remaining} GÜN`, color: 'text-blue-600 bg-blue-50' }
-      : { label: 'BİTTİ', color: 'text-red-600 bg-red-50' };
-  };
 
   const handleExtendTrial = async (id: string, currentEndDate: string) => {
     const baseDate = new Date(currentEndDate) > new Date() ? new Date(currentEndDate) : new Date();
@@ -44,111 +33,90 @@ export default function CompanyManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* ÜST BAR: Sabit ve Temiz */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 md:px-8">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">FİRMALAR</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{companies.length} Kayıtlı</p>
+    <div className="w-full">
+      {/* BAŞLIK VE EKLEME: İnce ve Modern Sabit Bar */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 sm:px-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-600 p-2 rounded-lg text-white">
+            <Building2 size={20} />
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 p-3 rounded-2xl text-white shadow-xl shadow-blue-200 active:scale-90 transition-transform"
-          >
-            <Plus size={24} />
-          </button>
+          <h1 className="text-lg font-black text-gray-900 tracking-tighter">FİRMALAR</h1>
+          <span className="bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded-full font-bold">{companies.length}</span>
         </div>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-black active:scale-95 transition-transform"
+        >
+          + EKLE
+        </button>
       </div>
 
-      {/* LİSTE ALANI */}
-      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-4">
+      {/* LİSTE: Kenardan kenara, kutusuz tasarım */}
+      <div className="divide-y divide-gray-50">
         {companies.map(c => {
-          const trial = getTrialStatus(c.trial_ends_at);
+          const remaining = Math.ceil((new Date(c.trial_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
           return (
-            <div key={c.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden transition-all active:ring-2 active:ring-blue-100">
-              {/* Kart Üst Bilgi */}
-              <div className="p-5 flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-white ${c.is_active ? 'bg-blue-600' : 'bg-slate-300'}`}>
-                    {c.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="font-black text-slate-800 leading-tight">{c.name}</h3>
-                    <p className="text-xs font-bold text-blue-600 uppercase mt-0.5">{c.authorized_person}</p>
-                  </div>
-                </div>
-                <div className={`px-3 py-1.5 rounded-full text-[10px] font-black ${trial.color}`}>
-                  {trial.label}
-                </div>
-              </div>
-
-              {/* Bilgi Satırları */}
-              <div className="px-5 pb-5 space-y-3">
-                <div className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl">
+            <div key={c.id} className="p-4 sm:p-6 hover:bg-gray-50/50 transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                
+                {/* Sol Alan: Firma ve Yetkili */}
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
-                    <Mail size={16} className="text-slate-400" />
-                    <span className="text-xs font-bold text-slate-600 truncate max-w-[150px]">{c.email}</span>
+                    <h2 className="text-base font-black text-gray-900 truncate uppercase">{c.name}</h2>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${remaining > 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
+                      {remaining > 0 ? `${remaining} GÜN` : 'BİTTİ'}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                    <span className={`font-mono text-xs font-bold ${showPasswords[c.id] ? 'text-slate-900' : 'text-transparent bg-slate-200 rounded'}`}>
+                  <p className="text-xs font-bold text-gray-400 mt-0.5 uppercase tracking-wider">{c.authorized_person}</p>
+                </div>
+
+                {/* Orta Alan: Giriş Bilgileri */}
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Mail size={14} className="text-gray-300" />
+                    <span className="text-xs font-bold">{c.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-lg">
+                    <span className={`font-mono text-xs font-bold ${showPasswords[c.id] ? 'text-gray-900' : 'text-transparent bg-gray-300 rounded'}`}>
                       {c.plain_password}
                     </span>
-                    <button onClick={() => setShowPasswords(p => ({...p, [c.id]: !p[c.id]}))} className="text-slate-400">
-                      {showPasswords[c.id] ? <EyeOff size={16}/> : <Eye size={16}/>}
+                    <button onClick={() => setShowPasswords(p => ({...p, [c.id]: !p[c.id]}))} className="text-gray-400">
+                      {showPasswords[c.id] ? <EyeOff size={14}/> : <Eye size={14}/>}
                     </button>
                   </div>
                 </div>
 
-                {/* HIZLI AKSİYON BUTONLARI - Tam Mobil Uyumlu */}
-                <div className="grid grid-cols-3 gap-2">
-                  <button 
-                    onClick={() => handleExtendTrial(c.id, c.trial_ends_at)}
-                    className="flex flex-col items-center justify-center gap-1 bg-blue-50 text-blue-700 py-3 rounded-2xl transition-colors active:bg-blue-100"
-                  >
-                    <CalendarPlus size={20} />
-                    <span className="text-[9px] font-black uppercase tracking-tighter">+14 GÜN</span>
+                {/* Sağ Alan: Hızlı Aksiyonlar */}
+                <div className="flex items-center gap-2 border-t sm:border-t-0 pt-3 sm:pt-0">
+                  <button onClick={() => handleExtendTrial(c.id, c.trial_ends_at)} className="flex-1 sm:flex-none bg-blue-50 text-blue-600 p-2.5 rounded-xl transition-colors hover:bg-blue-600 hover:text-white" title="Süre Uzat">
+                    <CalendarPlus size={18} />
                   </button>
-                  
-                  <button 
-                    onClick={() => toggleStatus(c.id, c.is_active)}
-                    className={`flex flex-col items-center justify-center gap-1 py-3 rounded-2xl transition-colors ${
-                      c.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                    }`}
-                  >
-                    <Power size={20} />
-                    <span className="text-[9px] font-black uppercase tracking-tighter">{c.is_active ? 'AKTİF' : 'PASİF'}</span>
+                  <button onClick={() => toggleStatus(c.id, c.is_active)} className={`flex-1 sm:flex-none p-2.5 rounded-xl font-black text-[10px] transition-all ${c.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    {c.is_active ? 'AKTİF' : 'PASİF'}
                   </button>
-
-                  <button 
-                    onClick={() => { if(confirm('SİLİNSİN Mİ?')) supabase.from('companies').delete().eq('id', c.id).then(() => fetchCompanies()) }}
-                    className="flex flex-col items-center justify-center gap-1 bg-slate-50 text-slate-400 py-3 rounded-2xl active:bg-red-50 active:text-red-600"
-                  >
-                    <Trash2 size={20} />
-                    <span className="text-[9px] font-black uppercase tracking-tighter">SİL</span>
+                  <button onClick={() => { if(confirm('SİLİNSİN Mİ?')) supabase.from('companies').delete().eq('id', c.id).then(() => fetchCompanies()) }} className="p-2.5 text-gray-300 hover:text-red-500">
+                    <Trash2 size={18} />
                   </button>
                 </div>
+
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* YENİ FİRMA EKLEME MODALI - Alttan Kayarak Açılan (Sheet Style) */}
+      {/* MODAL: Sadece gerektiğinde çıkan tertemiz bir form */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-          <div className="relative bg-white w-full max-w-lg rounded-t-[3rem] sm:rounded-[3rem] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto">
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 sm:hidden" />
-            <h2 className="text-2xl font-black text-slate-800 mb-6 tracking-tighter">YENİ FİRMA TANIMLA</h2>
-            <form onSubmit={(e) => { e.preventDefault(); /* handleCreate buraya */ }} className="space-y-4 pb-12 sm:pb-0">
-              <input className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 p-4 rounded-2xl outline-none font-bold text-slate-700 transition-all" placeholder="Firma Adı" required />
-              <input className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 p-4 rounded-2xl outline-none font-bold text-slate-700 transition-all" placeholder="Yetkili Kişi" required />
-              <input className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 p-4 rounded-2xl outline-none font-bold text-slate-700 transition-all" placeholder="E-posta" type="email" required />
-              <input className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 p-4 rounded-2xl outline-none font-bold text-slate-700 transition-all" placeholder="Şifre Belirle" type="text" required />
-              <button className="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl shadow-blue-100 mt-4 active:scale-95 transition-transform uppercase">
-                KAYDI TAMAMLA
-              </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h2 className="text-xl font-black mb-6 uppercase tracking-tighter text-gray-800">YENİ KAYIT</h2>
+            <form onSubmit={(e) => { e.preventDefault(); /* handleCreate */ }} className="space-y-4">
+              <input className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-sm border-2 border-transparent focus:border-blue-500 transition-all" placeholder="Firma Adı" required />
+              <input className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-sm border-2 border-transparent focus:border-blue-500 transition-all" placeholder="Yetkili" required />
+              <input className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-sm border-2 border-transparent focus:border-blue-500 transition-all" placeholder="E-posta" type="email" required />
+              <input className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-sm border-2 border-transparent focus:border-blue-500 transition-all" placeholder="Şifre" type="text" required />
+              <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all">KAYDET</button>
             </form>
           </div>
         </div>
