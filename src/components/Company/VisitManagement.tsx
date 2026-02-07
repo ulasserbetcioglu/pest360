@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
-  ClipboardCheck, Calendar, MapPin, User, 
-  Search, Plus, ChevronRight, Clock, 
-  Filter, CheckCircle2, AlertCircle, MoreHorizontal
+  ClipboardCheck, Calendar, MapPin, Search, 
+  Plus, ChevronRight, Clock, Filter 
 } from 'lucide-react';
 
 export default function VisitManagement() {
@@ -14,16 +13,12 @@ export default function VisitManagement() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchVisits = async () => {
+    if (!user?.companyId) return;
     setLoading(true);
-    // Ziyaretleri müşteriler ve operatörlerle birlikte çekiyoruz
     const { data, error } = await supabase
       .from('visits')
-      .select(`
-        *,
-        customers (name, address),
-        operators:profiles (first_name, last_name)
-      `)
-      .eq('company_id', user?.companyId)
+      .select(`*, customers(name, address), profiles!visits_operator_id_fkey(first_name, last_name)`)
+      .eq('company_id', user.companyId)
       .order('scheduled_at', { ascending: false });
 
     if (!error && data) setVisits(data);
@@ -32,111 +27,64 @@ export default function VisitManagement() {
 
   useEffect(() => { fetchVisits(); }, [user]);
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-700 border-green-200';
-      case 'pending': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
+  const filteredVisits = visits.filter(v => 
+    v.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="w-full min-h-screen bg-white pb-24">
-      {/* HEADER: Modern & Sabit */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-50 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Ziyaretler</h1>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Servis & Raporlama</p>
-          </div>
-          <button className="bg-blue-600 text-white p-3 rounded-2xl shadow-xl shadow-blue-100 active:scale-90 transition-transform">
-            <Plus size={24} />
-          </button>
+    <div className="w-full bg-white min-h-screen">
+      <div className="p-6 md:p-10 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Ziyaretler</h2>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Saha Operasyon Takibi</p>
         </div>
+        <button className="bg-blue-600 text-white px-6 py-4 rounded-2xl font-black text-sm shadow-xl shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <Plus size={20} /> YENİ SERVİS OLUŞTUR
+        </button>
       </div>
 
-      {/* ARAMA & FİLTRE: Full Mobil Uyumlu */}
-      <div className="p-6 max-w-5xl mx-auto space-y-4">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Müşteri veya operatör ara..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 border-none p-4 pl-12 rounded-2xl font-bold text-sm outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all"
-            />
-          </div>
-          <button className="bg-slate-50 p-4 rounded-2xl text-slate-600">
-            <Filter size={20} />
-          </button>
+      <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
+        <div className="relative mb-8">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+          <input 
+            type="text"
+            placeholder="Müşteri adına göre ara..."
+            className="w-full bg-slate-50 border-none p-5 pl-12 rounded-2xl font-bold text-sm outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
 
-        {/* ZİYARET LİSTESİ: Timeline Tasarımı */}
-        <div className="space-y-6 mt-8">
-          {visits.length === 0 && !loading && (
-            <div className="text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-100">
-              <ClipboardCheck size={48} className="mx-auto text-slate-200 mb-4" />
-              <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Henüz servis kaydı yok</p>
-            </div>
-          )}
-
-          {visits.map((visit) => (
-            <div key={visit.id} className="relative pl-8 group">
-              {/* Timeline Çizgisi */}
-              <div className="absolute left-[11px] top-0 bottom-0 w-0.5 bg-slate-100 group-last:bg-transparent"></div>
-              {/* Timeline Noktası */}
-              <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-4 border-white shadow-sm z-10 ${
-                visit.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
-              }`}></div>
-
-              <div className="bg-white border border-slate-50 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-shadow active:scale-[0.98]">
-                <div className="flex flex-col gap-4">
-                  {/* Durum & Tarih */}
-                  <div className="flex items-center justify-between">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getStatusStyle(visit.status)}`}>
-                      {visit.status === 'completed' ? 'TAMAMLANDI' : 'BEKLEYEN'}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-20 font-black text-slate-300 animate-pulse uppercase italic">Veriler Yükleniyor...</div>
+          ) : filteredVisits.map((visit) => (
+            <div key={visit.id} className="group relative bg-white border border-slate-50 rounded-[2.5rem] p-6 md:p-8 hover:shadow-xl hover:shadow-slate-100 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-6">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg ${visit.status === 'completed' ? 'bg-green-500 shadow-green-100' : 'bg-blue-500 shadow-blue-100'}`}>
+                  <ClipboardCheck size={28} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800 uppercase leading-none">{visit.customers?.name}</h3>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase">
+                      <MapPin size={12} /> {visit.customers?.address?.substring(0, 30)}...
                     </span>
-                    <div className="flex items-center gap-2 text-slate-400 font-black text-[10px]">
-                      <Calendar size={14} />
-                      {new Date(visit.scheduled_at).toLocaleDateString('tr-TR')}
-                      <Clock size={14} className="ml-2" />
-                      {new Date(visit.scheduled_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-
-                  {/* Müşteri & Adres Bilgisi */}
-                  <div>
-                    <h3 className="text-lg font-black text-slate-800 uppercase leading-tight">
-                      {visit.customers?.name || 'Bilinmeyen Müşteri'}
-                    </h3>
-                    <div className="flex items-start gap-1 mt-2 text-slate-500">
-                      <MapPin size={14} className="shrink-0 mt-0.5" />
-                      <p className="text-xs font-bold leading-relaxed">{visit.customers?.address || 'Adres belirtilmemiş'}</p>
-                    </div>
-                  </div>
-
-                  {/* Operatör & Aksiyon Çubuğu */}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-black text-[10px]">
-                        {visit.operators?.first_name?.[0]}{visit.operators?.last_name?.[0]}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-slate-300 uppercase">Operatör</span>
-                        <span className="text-xs font-black text-slate-600">
-                          {visit.operators?.first_name} {visit.operators?.last_name}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <button className="flex items-center gap-1 bg-slate-50 px-4 py-2 rounded-xl text-blue-600 font-black text-[10px] hover:bg-blue-600 hover:text-white transition-all uppercase">
-                      Detaylar <ChevronRight size={14} />
-                    </button>
+                    <span className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase">
+                      <Clock size={12} /> {new Date(visit.scheduled_at).toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}
+                    </span>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-4 md:pt-0">
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">Operatör</p>
+                  <p className="text-xs font-black text-slate-600 uppercase mt-1">{visit.profiles?.first_name} {visit.profiles?.last_name}</p>
+                </div>
+                <button className="p-4 bg-slate-50 text-slate-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <ChevronRight size={24} />
+                </button>
               </div>
             </div>
           ))}
