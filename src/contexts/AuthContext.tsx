@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // BURASI: Gerçek API endpoint'iniz ile değiştirin
+      // API endpoint'inizi buraya bağlayın
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error('Kayıt başarısız');
+      if (!response.ok) throw new Error('Kayıt işlemi başarısız');
     } finally {
       setLoading(false);
     }
