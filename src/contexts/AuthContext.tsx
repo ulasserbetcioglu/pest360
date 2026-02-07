@@ -16,52 +16,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Profil çekme fonksiyonu
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Profil çekiliyor:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Profil çekilirken SQL hatası:', error.message);
-        return null;
-      }
-      console.log('Profil başarıyla çekildi:', data);
+      if (error) throw error;
       return data;
     } catch (err) {
-      console.error('Beklenmedik hata:', err);
+      console.error('Profil yüklenirken hata:', err);
       return null;
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    
+
     const initAuth = async () => {
-      console.log('🔵 Auth başlatılıyor...');
-      
-      // Timeout ekleyelim - 5 saniye içinde cevap gelmezse loading'i kapat
-      const timeoutId = setTimeout(() => {
-        if (mounted) {
-          console.warn('⚠️ Supabase bağlantısı zaman aşımına uğradı, loading kapatılıyor...');
-          setLoading(false);
-        }
-      }, 5000);
-
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ Session hatası:', error);
-          throw error;
-        }
-
-        console.log('Session durumu:', session ? '✅ Var' : '❌ Yok');
-        
-        if (session?.user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && mounted) {
           const profile = await fetchUserProfile(session.user.id);
           if (profile && mounted) {
             setUser({
@@ -72,78 +50,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               lastName: profile.last_name,
               companyId: profile.company_id
             } as any);
-            console.log('✅ Kullanıcı set edildi:', profile.role);
-          } else if (mounted) {
-            console.warn('⚠️ Profil bulunamadı, oturum kapatılıyor');
-            await supabase.auth.signOut();
-            setUser(null);
           }
-        } else if (mounted) {
-          console.log('ℹ️ Session yok, user null yapılıyor');
-          setUser(null);
-        }
-      } catch (e) {
-        console.error('❌ Başlatma hatası:', e);
-        if (mounted) {
-          setUser(null);
         }
       } finally {
-        clearTimeout(timeoutId);
-        if (mounted) {
-          console.log('✅ Loading false yapılıyor');
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
 
     initAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔔 Auth event:', event);
-      
-      if (!mounted) return;
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('🔐 Login başarılı, profil çekiliyor...');
-        setLoading(true);
-        
-        try {
-          const profile = await fetchUserProfile(session.user.id);
-          
-          if (profile && mounted) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              role: profile.role,
-              firstName: profile.first_name,
-              lastName: profile.last_name,
-              companyId: profile.company_id
-            } as any);
-            console.log('✅ Login tamamlandı, dashboard yükleniyor...');
-          } else if (mounted) {
-            console.error('❌ Profil bulunamadı!');
-            await supabase.auth.signOut();
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('❌ Profil çekme hatası:', error);
-          if (mounted) {
-            setUser(null);
-          }
-        } finally {
-          if (mounted) {
-            setLoading(false);
-            console.log('✅ Loading kapatıldı (login sonrası)');
-          }
-        }
-      } else if (event === 'SIGNED_OUT') {
-        console.log('👋 Logout yapıldı');
+      if (event === 'SIGNED_OUT') {
         setUser(null);
         setLoading(false);
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token yenilendi');
-        // Token yenilendiğinde loading yapma
       }
+      // SIGNED_IN durumu login fonksiyonu içinde de yönetildiği için burada 
+      // mükerrer state güncellemelerinden kaçınıyoruz.
     });
 
     return () => {
@@ -153,8 +75,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        if (profile) {
+          setUser({
+            id: data.user.id,
+            email: data.user.email!,
+            role: profile.role,
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            companyId: profile.company_id
+          } as any);
+        } else {
+          throw new Error('Kullanıcı profili bulunamadı.');
+        }
+      }
+    } catch (error: any) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
@@ -166,13 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: any) => {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: { data: { firstName: data.firstName, lastName: data.lastName } }
-    });
-    setLoading(false);
-    if (error) throw error;
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: { data: { firstName: data.firstName, lastName: data.lastName } }
+      });
+      if (error) throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
