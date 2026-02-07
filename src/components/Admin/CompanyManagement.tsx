@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Building2, Plus, Trash2, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
+import { Building2, Plus, Trash2, CheckCircle, XCircle } from 'lucide-react';
 
 export default function CompanyManagement() {
   const [companies, setCompanies] = useState<any[]>([]);
@@ -10,7 +10,7 @@ export default function CompanyManagement() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '', // Adminin belirlediği şifre
+    password: '',
     tax_number: '',
     tax_office: '',
     full_address: '',
@@ -24,9 +24,19 @@ export default function CompanyManagement() {
 
   const fetchCompanies = async () => {
     setLoading(true);
-    const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false });
-    if (data) setCompanies(data);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setCompanies(data || []);
+    } catch (err: any) {
+      console.error('Firmalar yüklenirken hata:', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateCompanyWithAdmin = async (e: React.FormEvent) => {
@@ -34,7 +44,7 @@ export default function CompanyManagement() {
     setLoading(true);
 
     try {
-      // 1. ADIM: Firmayı Oluştur
+      // 1. Şirketi Ekle
       const { data: company, error: compError } = await supabase
         .from('companies')
         .insert([{
@@ -45,7 +55,7 @@ export default function CompanyManagement() {
           email: formData.email,
           phone: formData.phone,
           authorized_person: formData.authorized_person,
-          status: 'approved', // Admin eklediği için direkt onaylı
+          status: 'approved',
           is_active: true
         }])
         .select()
@@ -53,10 +63,8 @@ export default function CompanyManagement() {
 
       if (compError) throw compError;
 
-      // 2. ADIM: Firma Yöneticisi Kullanıcısını Oluştur (Supabase Auth)
-      // Not: Admin yetkisiyle kullanıcı oluşturmak için genelde Edge Functions veya 
-      // signUp kullanılır. Burada signUp kullanarak kullanıcıyı oluşturuyoruz.
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // 2. Auth Kullanıcısını Oluştur
+      const { error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -71,11 +79,11 @@ export default function CompanyManagement() {
 
       if (authError) throw authError;
 
-      alert('Firma ve yönetici hesabı başarıyla oluşturuldu!');
+      alert('Firma ve Yönetici hesabı başarıyla oluşturuldu!');
       setIsModalOpen(false);
       fetchCompanies();
     } catch (err: any) {
-      alert('Hata: ' + err.message);
+      alert('İşlem başarısız: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -89,78 +97,125 @@ export default function CompanyManagement() {
         </h2>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
         >
           <Plus size={20} /> Yeni Firma & Yönetici Ekle
         </button>
       </div>
 
-      {/* Liste Tablosu */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b text-sm">
-            <tr>
-              <th className="p-4">Firma / Yetkili</th>
-              <th className="p-4">Vergi Bilgileri</th>
-              <th className="p-4">İletişim</th>
-              <th className="p-4">Durum</th>
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map((company) => (
-              <tr key={company.id} className="border-b hover:bg-gray-50 text-sm">
-                <td className="p-4">
-                  <div className="font-bold">{company.name}</div>
-                  <div className="text-gray-500 text-xs">{company.authorized_person}</div>
-                </td>
-                <td className="p-4">
-                  <div>{company.tax_number}</div>
-                  <div className="text-gray-500 text-xs">{company.tax_office}</div>
-                </td>
-                <td className="p-4 text-gray-600">
-                  <div>{company.email}</div>
-                  <div>{company.phone}</div>
-                </td>
-                <td className="p-4">
-                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Onaylı</span>
-                </td>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b text-sm font-semibold text-gray-700">
+              <tr>
+                <th className="p-4">Firma / Yetkili</th>
+                <th className="p-4">Vergi Bilgileri</th>
+                <th className="p-4">İletişim</th>
+                <th className="p-4">Durum</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {companies.map((company) => (
+                <tr key={company.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="p-4">
+                    <div className="font-bold text-gray-900">{company.name}</div>
+                    <div className="text-gray-500 text-xs">{company.authorized_person || '-'}</div>
+                  </td>
+                  <td className="p-4 text-sm text-gray-600">
+                    <div>{company.tax_number || '-'}</div>
+                    <div className="text-gray-400 text-xs">{company.tax_office || '-'}</div>
+                  </td>
+                  <td className="p-4 text-sm text-gray-600">
+                    <div>{company.email}</div>
+                    <div className="text-gray-400 text-xs">{company.phone || '-'}</div>
+                  </td>
+                  <td className="p-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <CheckCircle className="w-3 h-3 mr-1" /> Onaylı
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {loading && <div className="p-8 text-center text-gray-500 italic">Veriler güncelleniyor...</div>}
+        {!loading && companies.length === 0 && (
+          <div className="p-8 text-center text-gray-500">Henüz kayıtlı firma bulunmuyor.</div>
+        )}
       </div>
 
-      {/* Gelişmiş Ekleme Modalı */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl my-8">
-            <h3 className="text-xl font-bold mb-4 border-b pb-2">Yeni Firma ve Yönetici Tanımla</h3>
-            <form onSubmit={handleCreateCompanyWithAdmin} className="grid grid-cols-2 gap-4">
-              
-              <div className="col-span-2 font-semibold text-blue-600 text-sm">Firma Bilgileri</div>
-              <input placeholder="Firma Ticari Adı" className="border p-2 rounded" required
-                onChange={e => setFormData({...formData, name: e.target.value})} />
-              <input placeholder="Yetkili Ad Soyad" className="border p-2 rounded" required
-                onChange={e => setFormData({...formData, authorized_person: e.target.value})} />
-              <input placeholder="Vergi Numarası" className="border p-2 rounded" required
-                onChange={e => setFormData({...formData, tax_number: e.target.value})} />
-              <input placeholder="Vergi Dairesi" className="border p-2 rounded" required
-                onChange={e => setFormData({...formData, tax_office: e.target.value})} />
-              <textarea placeholder="Tam Adres" className="border p-2 rounded col-span-2" required
-                onChange={e => setFormData({...formData, full_address: e.target.value})} />
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-800">Yeni Firma ve Yönetici Tanımla</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateCompanyWithAdmin} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-full font-semibold text-blue-700 text-sm uppercase tracking-wider">Firma Bilgileri</div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500">Firma Ticari Adı</label>
+                  <input className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required
+                    onChange={e => setFormData({...formData, name: e.target.value})} />
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500">Yetkili Ad Soyad</label>
+                  <input className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required
+                    onChange={e => setFormData({...formData, authorized_person: e.target.value})} />
+                </div>
 
-              <div className="col-span-2 font-semibold text-blue-600 text-sm border-t pt-2">Giriş Bilgileri (Yönetici)</div>
-              <input placeholder="Giriş E-postası" type="email" className="border p-2 rounded" required
-                onChange={e => setFormData({...formData, email: e.target.value})} />
-              <input placeholder="Giriş Şifresi" type="text" className="border p-2 rounded" required
-                onChange={e => setFormData({...formData, password: e.target.value})} />
-              <input placeholder="Telefon" type="tel" className="border p-2 rounded"
-                onChange={e => setFormData({...formData, phone: e.target.value})} />
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500">Vergi Numarası</label>
+                  <input className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required
+                    onChange={e => setFormData({...formData, tax_number: e.target.value})} />
+                </div>
 
-              <div className="col-span-2 flex gap-2 justify-end mt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2">İptal</button>
-                <button type="submit" disabled={loading} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">
-                  {loading ? 'Oluşturuluyor...' : 'Firmayı Kaydet ve Hesap Aç'}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500">Vergi Dairesi</label>
+                  <input className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required
+                    onChange={e => setFormData({...formData, tax_office: e.target.value})} />
+                </div>
+
+                <div className="col-span-full space-y-1">
+                  <label className="text-xs font-medium text-gray-500">Tam Adres</label>
+                  <textarea rows={2} className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required
+                    onChange={e => setFormData({...formData, full_address: e.target.value})} />
+                </div>
+
+                <div className="col-span-full font-semibold text-blue-700 text-sm uppercase tracking-wider pt-4 border-t">Giriş Bilgileri (Yönetici)</div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500">E-posta</label>
+                  <input type="email" className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required
+                    onChange={e => setFormData({...formData, email: e.target.value})} />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500">Şifre</label>
+                  <input type="text" className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required
+                    onChange={e => setFormData({...formData, password: e.target.value})} />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500">Telefon</label>
+                  <input type="tel" className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    onChange={e => setFormData({...formData, phone: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-6">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors">
+                  İptal
+                </button>
+                <button type="submit" disabled={loading} className="bg-blue-600 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg hover:bg-blue-700 disabled:opacity-50 transition-all">
+                  {loading ? 'Oluşturuluyor...' : 'Kaydet ve Hesap Aç'}
                 </button>
               </div>
             </form>
