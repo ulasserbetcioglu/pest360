@@ -18,29 +18,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // .single() yerine veri gelmezse hata fırlatmaması için limit(1) kullanılabilir
-      // ama single() daha temizdir.
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, companies(name)')
+        .select('*')
         .eq('id', userId)
-        .maybeSingle(); // single() yerine maybeSingle() döngüleri engeller
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Profil çekilirken SQL hatası:', error.message);
+        return null;
+      }
       return data;
     } catch (err) {
-      console.error('Profil çekme hatası:', err);
+      console.error('Beklenmedik hata:', err);
       return null;
     }
   };
 
   useEffect(() => {
     const initAuth = async () => {
+      setLoading(true);
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (sessionError) throw sessionError;
-
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
           if (profile) {
@@ -50,18 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: profile.role,
               firstName: profile.first_name,
               lastName: profile.last_name,
-              companyId: profile.company_id,
-              companyName: profile.companies?.name
+              companyId: profile.company_id
             } as any);
           } else {
-            // Oturum var ama profil yoksa çıkış yaptır veya hata göster
-            console.warn("Oturum açık ancak profil bulunamadı.");
+            // Oturum var ama profil yoksa kullanıcıyı temizle
+            await supabase.auth.signOut();
+            setUser(null);
           }
         }
       } catch (e) {
-        console.error('Başlatma sırasında hata:', e);
+        console.error('Başlatma hatası:', e);
       } finally {
-        // Hata olsa da olmasa da bu çalışmalı!
         setLoading(false);
       }
     };
@@ -79,8 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: profile.role,
             firstName: profile.first_name,
             lastName: profile.last_name,
-            companyId: profile.company_id,
-            companyName: profile.companies?.name
+            companyId: profile.company_id
           } as any);
         }
         setLoading(false);
@@ -94,32 +92,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    // onAuthStateChange SIGNED_IN durumunu yakalayacağı için sadece error kontrolü yeterli
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
   const logout = async () => {
     setLoading(true);
-    try {
-      await supabase.auth.signOut();
-    } finally {
-      setLoading(false);
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setLoading(false);
   };
 
   const register = async (data: any) => {
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: { data: { firstName: data.firstName, lastName: data.lastName } }
-      });
-      if (error) throw error;
-    } finally {
-      setLoading(false);
-    }
+    const { error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: { data: { firstName: data.firstName, lastName: data.lastName } }
+    });
+    setLoading(false);
+    if (error) throw error;
   };
 
   return (
