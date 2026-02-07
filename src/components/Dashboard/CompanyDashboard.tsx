@@ -1,62 +1,97 @@
-import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { Users, Briefcase, MapPin, ClipboardList, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Users, MapPin, ClipboardList, TrendingUp, 
+  Plus, Search, ChevronRight, briefcase, Calendar
+} from 'lucide-react';
+import OperatorManagement from '../Company/OperatorManagement'; // Birazdan oluşturacağız
+import CustomerManagement from '../Company/CustomerManagement'; // Birazdan oluşturacağız
 
 export default function CompanyDashboard() {
-  const { user } = useAuth();
-
-  const stats = [
-    { title: 'Operatörler', value: '0', icon: Users, color: 'bg-blue-500' },
-    { title: 'Müşteriler', value: '0', icon: Briefcase, color: 'bg-green-500' },
-    { title: 'Şubeler', value: '0', icon: MapPin, color: 'bg-purple-500' },
-    { title: 'İşlemler', value: '0', icon: ClipboardList, color: 'bg-orange-500' },
-  ];
+  const [activeTab, setActiveTab] = useState<'overview' | 'operators' | 'customers'>('overview');
 
   return (
-    <div className="p-4 md:p-6 space-y-6 pb-24 md:pb-6">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-700 to-indigo-900 p-6 md:p-8 rounded-3xl text-white shadow-lg">
-        <h1 className="text-2xl md:text-3xl font-bold">Hoş Geldiniz, {user?.firstName}</h1>
-        <p className="opacity-80 mt-1 text-sm md:text-base font-medium">
-          {user?.companyName || 'Yönetim Paneli'}
-        </p>
-      </div>
-
-      {/* Stats Grid - Mobilde 2 sütun, Masaüstünde 4 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center md:items-start gap-3 text-center md:text-left">
-            <div className={`${stat.color} p-3 rounded-xl text-white shrink-0`}>
-              <stat.icon size={20} className="md:w-6 md:h-6" />
-            </div>
-            <div>
-              <p className="text-[10px] md:text-sm text-gray-500 font-bold uppercase tracking-wider">{stat.title}</p>
-              <p className="text-lg md:text-2xl font-black text-gray-800">{stat.value}</p>
+    <div className="min-h-screen bg-white font-sans">
+      {/* ÜST NAVİGASYON - Modern & Dinamik */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-50 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex flex-col">
+            <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase">OPERASYON MERKEZİ</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sistem Aktif</span>
             </div>
           </div>
-        ))}
+          <button className="bg-slate-100 p-3 rounded-2xl text-slate-600 hover:bg-blue-600 hover:text-white transition-all">
+            <Plus size={24} />
+          </button>
+        </div>
       </div>
 
-      {/* Action Buttons & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold mb-4 text-gray-800">Hızlı İşlemler</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button className="flex items-center justify-center gap-2 p-4 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-all active:scale-95 border border-blue-200">
-              <Plus size={18} /> Operatör Ekle
+      {/* KONTROL SEKMELERİ - Mobilde Kaydırılabilir */}
+      <div className="px-4 py-6 max-w-5xl mx-auto">
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          {[
+            { id: 'overview', label: 'Özet', icon: TrendingUp },
+            { id: 'operators', label: 'Operatörler', icon: Users },
+            { id: 'customers', label: 'Müşteriler', icon: MapPin },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-tighter transition-all whitespace-nowrap ${
+                activeTab === tab.id 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' 
+                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+              }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
             </button>
-            <button className="flex items-center justify-center gap-2 p-4 bg-green-50 text-green-700 rounded-xl font-bold hover:bg-green-100 transition-all active:scale-95 border border-green-200">
-              <Plus size={18} /> Müşteri Ekle
-            </button>
-          </div>
+          ))}
         </div>
-        
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[150px] flex flex-col items-center justify-center text-center">
-          <div className="bg-gray-50 p-4 rounded-full mb-2">
-            <ClipboardList className="text-gray-300" size={32} />
+      </div>
+
+      {/* İÇERİK ALANI */}
+      <div className="max-w-5xl mx-auto px-4 pb-24">
+        {activeTab === 'overview' && (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Hızlı İstatistik Kartları */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-blue-50 p-6 rounded-[2.5rem] border border-blue-100">
+                <ClipboardList className="text-blue-600 mb-3" size={28} />
+                <div className="text-2xl font-black text-blue-900 leading-none">12</div>
+                <p className="text-[10px] font-black text-blue-400 uppercase mt-1">Bugünkü İşler</p>
+              </div>
+              <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100">
+                <Users className="text-slate-600 mb-3" size={28} />
+                <div className="text-2xl font-black text-slate-900 leading-none">5</div>
+                <p className="text-[10px] font-black text-slate-400 uppercase mt-1">Aktif Ekip</p>
+              </div>
+            </div>
+
+            {/* Son Aktiviteler Listesi */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Son İşlemler</h3>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-5 bg-white border border-slate-50 rounded-3xl shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-orange-50 text-orange-600 p-3 rounded-2xl">
+                      <Calendar size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-800 text-sm">Merkez Restoran</h4>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Periyodik İlaçlama • 14:00</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-slate-300" />
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-gray-400 text-sm italic">Son aktiviteler henüz bulunmuyor.</p>
-        </div>
+        )}
+
+        {activeTab === 'operators' && <OperatorManagement />}
+        {activeTab === 'customers' && <CustomerManagement />}
       </div>
     </div>
   );
