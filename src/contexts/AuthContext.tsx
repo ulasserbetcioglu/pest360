@@ -23,44 +23,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*, companies(name)')
         .eq('id', userId)
         .single();
-
       if (error) throw error;
       return data;
-    } catch (error) {
-      console.error('Profil yükleme hatası:', error);
+    } catch (err) {
+      console.error('Profil detayları alınamadı:', err);
       return null;
     }
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user && mounted) {
-        const profile = await fetchUserProfile(session.user.id);
-        if (profile && mounted) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            role: profile.role,
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            companyId: profile.company_id,
-            companyName: profile.companies?.name
-          } as any);
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id);
+          if (profile) {
+            setUser({
+              id: session.user.id,
+              email: session.user.email!,
+              role: profile.role,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              companyId: profile.company_id,
+              companyName: profile.companies?.name
+            } as any);
+          }
         }
+      } catch (e) {
+        console.error('Auth başlatma hatası:', e);
+      } finally {
+        setLoading(false); // Her durumda loading'i kapat
       }
-      if (mounted) setLoading(false);
     };
 
-    initializeAuth();
+    initAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
+        setLoading(true);
         const profile = await fetchUserProfile(session.user.id);
-        if (profile && mounted) {
+        if (profile) {
           setUser({
             id: session.user.id,
             email: session.user.email!,
@@ -71,59 +73,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             companyName: profile.companies?.name
           } as any);
         }
+        setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setLoading(false);
       }
-      if (mounted) setLoading(false);
     });
 
-    return () => {
-      mounted = false;
-      authListener.subscription.unsubscribe();
-    };
+    return () => authListener.subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      // Profil useEffect içindeki onAuthStateChange tarafından otomatik yüklenecek
-    } catch (error: any) {
-      setLoading(false);
-      throw new Error(error.message || 'Giriş yapılamadı');
-    }
+    // onAuthStateChange SIGNED_IN olayını yakalayacağı için burada sadece isteği atıyoruz
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   };
 
   const logout = async () => {
-    setLoading(true);
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+    await supabase.auth.signOut();
   };
 
   const register = async (data: any) => {
-    setLoading(true);
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-          }
-        }
-      });
-      if (authError) throw authError;
-    } catch (error: any) {
-      throw new Error(error.message || 'Kayıt başarısız');
-    } finally {
-      setLoading(false);
-    }
+    const { error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: { data: { firstName: data.firstName, lastName: data.lastName } }
+    });
+    if (error) throw error;
   };
 
   return (
