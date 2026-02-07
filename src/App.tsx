@@ -1,85 +1,65 @@
-import React from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LanguageProvider, useLanguage } from './hooks/useLanguage';
+import React, { useState } from 'react';
+import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout/Layout';
-import LoginForm from './components/Auth/LoginForm';
-import RegisterForm from './components/Auth/RegisterForm';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
 import CompanyDashboard from './components/Dashboard/CompanyDashboard';
 import OperatorDashboard from './components/Dashboard/OperatorDashboard';
+import LoginForm from './components/Auth/LoginForm';
+import RegisterForm from './components/Auth/RegisterForm';
 
-function AppContent() {
+function App() {
   const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const [showRegister, setShowRegister] = useState(false);
 
-  // Simple routing based on current path
-  const currentPath = window.location.pathname;
-
+  // Uygulama yüklenirken veya oturum kontrol edilirken loading göster
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-4">{t('common.loading')}</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
+  // Kullanıcı oturum açmamışsa Giriş veya Kayıt formunu göster
   if (!user) {
-    if (currentPath === '/register') {
-      return <RegisterForm />;
-    }
-    return <LoginForm />;
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        {showRegister ? (
+          <div className="w-full max-w-md">
+            <RegisterForm onSuccess={() => setShowRegister(false)} />
+            <button
+              onClick={() => setShowRegister(false)}
+              className="mt-4 w-full text-sm text-blue-600 hover:underline text-center"
+            >
+              Zaten hesabınız var mı? Giriş yapın
+            </button>
+          </div>
+        ) : (
+          <LoginForm onToggleRegister={() => setShowRegister(true)} />
+        )}
+      </div>
+    );
   }
 
-  const getDashboardComponent = () => {
+  // Kullanıcı rolüne göre ilgili Dashboard'u belirle
+  const renderDashboard = () => {
     switch (user.role) {
       case 'admin':
         return <AdminDashboard />;
-      case 'company':
+      case 'company_admin':
         return <CompanyDashboard />;
       case 'operator':
         return <OperatorDashboard />;
-      case 'customer':
-        return (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Müşteri Paneli
-            </h2>
-            <p className="text-gray-600">
-              Müşteri dashboard yakında eklenecek...
-            </p>
-          </div>
-        );
       default:
-        return (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {t('common.welcome')}
-            </h2>
-            <p className="text-gray-600">
-              Dashboard yükleniyor...
-            </p>
-          </div>
-        );
+        return <OperatorDashboard />;
     }
   };
 
+  // Oturum açılmışsa Layout içinde Dashboard'u göster
   return (
     <Layout>
-      {getDashboardComponent()}
+      {renderDashboard()}
     </Layout>
-  );
-}
-
-function App() {
-  return (
-    <LanguageProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </LanguageProvider>
   );
 }
 
