@@ -45,53 +45,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Check if this is an admin login attempt (you can determine this by email domain or other criteria)
-      const isAdminEmail = email.endsWith('@pest360.com') || email === 'admin@example.com'; // Adjust as needed
-      
-      if (isAdminEmail) {
-        // Use Supabase Auth for admin login
-        const { data: authData, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-        if (error) throw error;
+      if (authError) throw authError;
 
-        if (authData.user) {
-          const userObj: User = {
-            id: authData.user.id,
-            email: authData.user.email!,
-            role: 'admin',
-            firstName: 'Admin',
-            lastName: 'User',
-            isActive: true,
-            createdAt: new Date(authData.user.created_at || Date.now()),
-            updatedAt: new Date()
-          };
-
-          setUser(userObj);
-          localStorage.setItem('pest360_user', JSON.stringify(userObj));
-        }
-      } else {
-        // Use local auth for company/operator users
-        const dbUser = await localAuth.login({ email, password });
-        const userObj: User = {
-          id: dbUser.id,
-          email: dbUser.email,
-          role: dbUser.role,
-          firstName: dbUser.first_name,
-          lastName: dbUser.last_name,
-          phone: dbUser.phone,
-          companyId: dbUser.company_id,
-          customerId: dbUser.customer_id,
-          isActive: dbUser.is_active,
-          createdAt: new Date(dbUser.created_at),
-          updatedAt: new Date(dbUser.updated_at)
-        };
-
-        setUser(userObj);
-        localStorage.setItem('pest360_user', JSON.stringify(userObj));
+      if (!authData.user) {
+        throw new Error('Giriş başarısız');
       }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        throw new Error('Kullanıcı profili bulunamadı');
+      }
+
+      if (!profile.is_active && profile.role !== 'admin') {
+        throw new Error('Hesabınız henüz aktif değil. Admin onayı bekleniyor.');
+      }
+
+      const userObj: User = {
+        id: profile.id,
+        email: profile.email,
+        role: profile.role,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        phone: profile.phone,
+        companyId: profile.company_id,
+        customerId: profile.customer_id,
+        isActive: profile.is_active,
+        createdAt: new Date(profile.created_at),
+        updatedAt: new Date(profile.updated_at)
+      };
+
+      setUser(userObj);
+      localStorage.setItem('pest360_user', JSON.stringify(userObj));
     } catch (error) {
       throw error;
     } finally {

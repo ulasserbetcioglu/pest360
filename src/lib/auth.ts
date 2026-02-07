@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { User } from '../types'; // Import User type
+import { User } from '../types';
 
 export interface LoginCredentials {
   email: string;
@@ -18,81 +18,66 @@ export interface RegisterData {
   authorizedPerson: string;
 }
 
-// Define a type for your local session
 interface LocalSession {
   id: string;
   email: string;
   role: User['role'];
   type: 'operator' | 'company' | 'admin' | 'customer';
-  companyId?: string; // Add companyId here
+  companyId?: string;
 }
 
-// Local authentication for non-admin users
 export const localAuth = {
   async login(credentials: LoginCredentials) {
     const { email, password } = credentials;
-    
-    // Check if user exists in our users table
-    const { data: user, error } = await supabase
-      .from('users')
+
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError) {
+      throw new Error('E-posta veya şifre hatalı');
+    }
+
+    if (!authData.user) {
+      throw new Error('Kullanıcı bulunamadı');
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
       .select(`
         *,
         companies (*)
       `)
-      .eq('email', email)
+      .eq('id', authData.user.id)
       .eq('is_active', true)
       .single();
 
-    if (error || !user) {
-      throw new Error('Kullanıcı bulunamadı');
+    if (profileError || !profile) {
+      throw new Error('Kullanıcı profili bulunamadı veya hesap aktif değil');
     }
 
-    // Verify password (in production, this would be properly hashed)
-    // For demo purposes, we'll accept '123456' for all users
-    if (password !== '123456') {
-      throw new Error('Geçersiz şifre');
+    const userCompany = profile.companies as any;
+    if (profile.role === 'company' && userCompany && !userCompany.is_approved) {
+      throw new Error('Firma henüz admin tarafından onaylanmamış');
     }
 
-    // Check trial period for company users
-    if (user.role === 'company' && user.trial_end_date) {
-      const trialEnd = new Date(user.trial_end_date);
-      if (trialEnd < new Date()) {
-        throw new Error('Deneme süreniz sona ermiştir');
-      }
-    }
-
-    return user;
+    return profile;
   },
 
   async register(data: RegisterData) {
     const { email, password, firstName, lastName, phone, companyName, taxNumber, address, authorizedPerson } = data;
-    
-    // Check if email already exists
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
 
-    if (existingUser) {
-      throw new Error('Bu e-posta adresi zaten kullanımda');
-    }
-
-    // Check if company tax number already exists
     const { data: existingCompany } = await supabase
       .from('companies')
       .select('id')
       .eq('tax_number', taxNumber)
-      .single();
+      .maybeSingle();
 
     if (existingCompany) {
       throw new Error('Bu vergi numarası zaten kayıtlı');
     }
 
-    // Hash password (in production)
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Create company first
     const { data: company, error: companyError } = await supabase
       .from('companies')
       .insert({
@@ -102,40 +87,60 @@ export const localAuth = {
         address: address,
         tax_number: taxNumber,
         authorized_person: authorizedPerson,
-        is_approved: false, // Requires admin approval
-        is_demo: false,
-        trial_end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days from now
+        is_approved: false
       })
       .select()
       .single();
 
     if (companyError || !company) {
-      throw new Error('Firma kaydı oluşturulamadı');
+      throw new Error('Firma kaydı oluşturulamadı: ' + companyError?.message);
     }
 
-    // Create user
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .insert({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone,
+          role: 'company',
+          company_id: company.id,
+          is_active: false
+        }
+      }
+    });
+
+    if (authError) {
+      await supabase.from('companies').delete().eq('id', company.id);
+      throw new Error(authError.message || 'Kayıt oluşturulamadı');
+    }
+
+    if (!authData.user) {
+      await supabase.from('companies').delete().eq('id', company.id);
+      throw new Error('Kullanıcı oluşturulamadı');
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: authData.user.id,
         email: email,
-        password_hash: passwordHash,
         role: 'company',
         first_name: firstName,
         last_name: lastName,
         phone: phone,
         company_id: company.id,
-        is_active: false // Will be activated when company is approved
-      })
-      .select()
-      .single();
+        is_active: false
+      });
 
-    if (userError || !user) {
-      // Rollback company creation
+    if (profileError) {
       await supabase.from('companies').delete().eq('id', company.id);
-      throw new Error('Kullanıcı kaydı oluşturulamadı');
+      throw new Error('Kullanıcı profili oluşturulamadı: ' + profileError.message);
     }
 
-    return { user, company };
+    return { user: authData.user, company };
   },
 
   getSession(): LocalSession | null {
