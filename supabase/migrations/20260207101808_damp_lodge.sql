@@ -267,10 +267,9 @@ BEGIN
     RETURNING id INTO demo_company_id;
   ELSE
     -- Update existing company to link to admin
-    UPDATE companies 
-    SET created_by_admin_id = demo_admin_user_id 
-    WHERE id = demo_company_id;
-  END IF;
+UPDATE companies 
+SET created_by_admin_id = demo_admin_user_id::uuid 
+WHERE id = demo_company_id;
 
   -- Update existing users to link to company
   UPDATE users 
