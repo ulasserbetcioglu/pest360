@@ -11,7 +11,6 @@ function App() {
   const { user, loading } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
 
-  // Uygulama yüklenirken veya oturum kontrol edilirken loading göster
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -20,7 +19,6 @@ function App() {
     );
   }
 
-  // Kullanıcı oturum açmamışsa Giriş veya Kayıt formunu göster
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -41,7 +39,6 @@ function App() {
     );
   }
 
-  // Kullanıcı rolüne göre ilgili Dashboard'u belirle
   const renderDashboard = () => {
     switch (user.role) {
       case 'admin':
@@ -55,7 +52,6 @@ function App() {
     }
   };
 
-  // Oturum açılmışsa Layout içinde Dashboard'u göster
   return (
     <Layout>
       {renderDashboard()}
