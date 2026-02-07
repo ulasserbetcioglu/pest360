@@ -13,12 +13,12 @@ import {
 const AdminDashboard: React.FC = () => {
   const { t } = useLanguage();
 
-  // Demo data for admin dashboard
+  // Mock data for admin dashboard
   const stats = {
-    totalCompanies: 1,
-    pendingApprovals: 0,
-    totalOperators: 6,
-    totalCustomers: 24,
+    totalCompanies: 12,
+    pendingApprovals: 3,
+    totalOperators: 45,
+    totalCustomers: 128,
     monthlyRevenue: '₺245,000',
     systemHealth: '99.9%'
   };
@@ -47,17 +47,17 @@ const AdminDashboard: React.FC = () => {
         <DashboardCard
           title={t('dashboard.pendingApprovals')}
           value={stats.pendingApprovals}
-          change="Tüm başvurular işlendi"
-          changeType="neutral"
+          change="Acil onay gerekli"
+          changeType="decrease"
           icon={AlertCircle}
-          color="green"
+          color="orange"
         />
 
         <DashboardCard
           title="Toplam Operatör"
           value={stats.totalOperators}
-          change="Demo sistem"
-          changeType="neutral"
+          change="+8 bu ay"
+          changeType="increase"
           icon={Users}
           color="green"
         />
@@ -65,8 +65,8 @@ const AdminDashboard: React.FC = () => {
         <DashboardCard
           title={t('dashboard.totalCustomers')}
           value={stats.totalCustomers}
-          change="Demo veri"
-          changeType="neutral"
+          change="+15 bu ay"
+          changeType="increase"
           icon={Users}
           color="purple"
         />
@@ -74,8 +74,8 @@ const AdminDashboard: React.FC = () => {
         <DashboardCard
           title={t('dashboard.monthlyRevenue')}
           value={stats.monthlyRevenue}
-          change="Demo hesaplama"
-          changeType="neutral"
+          change="+12% geçen aya göre"
+          changeType="increase"
           icon={TrendingUp}
           color="green"
         />
@@ -94,15 +94,30 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Demo Sistem Durumu
+            Son Firma Başvuruları
           </h3>
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <p className="text-gray-600">
-              Demo sistem aktif. 1 firma kayıtlı ve çalışıyor.
-            </p>
+          <div className="space-y-4">
+            {[
+              { company: 'Elit İlaçlama Hizmetleri', date: '2 saat önce', status: 'pending' },
+              { company: 'Pro Pest Control', date: '5 saat önce', status: 'approved' },
+              { company: 'Güvenli İlaçlama', date: '1 gün önce', status: 'pending' },
+            ].map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{item.company}</p>
+                  <p className="text-sm text-gray-600">{item.date}</p>
+                </div>
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    item.status === 'pending'
+                      ? 'bg-orange-100 text-orange-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}
+                >
+                  {item.status === 'pending' ? 'Bekliyor' : 'Onaylandı'}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -110,14 +125,28 @@ const AdminDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Sistem Bildirimleri
           </h3>
-          Sistem Durumu
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Gerçek Supabase Auth aktif</p>
-                <p className="text-xs text-gray-600">Admin girişi için Supabase Dashboard kullanın</p>
+          <div className="space-y-4">
+            {[
+              { message: 'Demo veri güncellendi', time: '10 dakika önce', type: 'info' },
+              { message: '3 yeni firma kaydı bekliyor', time: '2 saat önce', type: 'warning' },
+              { message: 'Sistem bakımı tamamlandı', time: '1 gün önce', type: 'success' },
+            ].map((notification, index) => (
+              <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    notification.type === 'warning'
+                      ? 'bg-orange-500'
+                      : notification.type === 'success'
+                      ? 'bg-green-500'
+                      : 'bg-blue-500'
+                  }`}
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                  <p className="text-xs text-gray-600">{notification.time}</p>
+                </div>
               </div>
-            Sistem aktif ve çalışıyor. Gerçek Supabase Auth kullanılıyor.
+            ))}
           </div>
         </div>
       </div>

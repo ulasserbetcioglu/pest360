@@ -7,20 +7,6 @@ import RegisterForm from './components/Auth/RegisterForm';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
 import CompanyDashboard from './components/Dashboard/CompanyDashboard';
 import OperatorDashboard from './components/Dashboard/OperatorDashboard';
-import CompaniesPage from './components/Admin/CompaniesPage';
-import CreateCompanyPage from './components/Admin/CreateCompanyPage';
-import ApprovalsPage from './components/Admin/ApprovalsPage';
-import ReportsPage from './components/Admin/ReportsPage';
-import SettingsPage from './components/Admin/SettingsPage';
-import VisitsPage from './components/Company/VisitsPage';
-import CustomersPage from './components/Company/CustomersPage';
-import OperatorsPage from './components/Company/OperatorsPage';
-import CalendarPage from './components/Company/CalendarPage';
-import InventoryPage from './components/Company/InventoryPage';
-import CompanyReportsPage from './components/Company/CompanyReportsPage';
-import CompanySettingsPage from './components/Company/CompanySettingsPage';
-import VisitDetails from './components/Operator/VisitDetails'; // Yeni bileşeni import edin
-import { Toaster } from 'sonner'; // Toaster bileşenini import edin
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -48,51 +34,14 @@ function AppContent() {
   }
 
   const getDashboardComponent = () => {
-    // Admin routes (Pest360 genel admini)
-    if (user.role === 'admin') {
-      switch (currentPath) {
-        case '/companies':
-          return <CompaniesPage />;
-        case '/create-company':
-          return <CreateCompanyPage />;
-        case '/approvals':
-          return <ApprovalsPage />;
-        case '/reports':
-          return <ReportsPage />;
-        case '/settings':
-          return <SettingsPage />;
-        default:
-          return <AdminDashboard />;
-      }
-    }
-
-    // Rol tabanlı dashboard'lar
     switch (user.role) {
-      case 'company': // İlaçlama firmasının admini/yöneticisi
-        switch (currentPath) {
-          case '/visits':
-            return <VisitsPage />;
-          case '/calendar':
-            return <CalendarPage />;
-          case '/customers':
-            return <CustomersPage />;
-          case '/operators':
-            return <OperatorsPage />;
-          case '/inventory':
-            return <InventoryPage />;
-          case '/reports':
-            return <CompanyReportsPage />;
-          case '/settings':
-            return <CompanySettingsPage />;
-          default:
-            return <CompanyDashboard />;
-        }
+      case 'admin':
+        return <AdminDashboard />;
+      case 'company':
+        return <CompanyDashboard />;
       case 'operator':
-        if (currentPath.startsWith('/operator/visits/')) {
-          const visitId = currentPath.split('/operator/visits/')[1];
-          return <VisitDetails visitId={visitId} key={visitId} />;
-        }
-        // Diğer operatör rotaları veya varsayılan dashboard
+        return <OperatorDashboard />;
+      case 'customer':
         return (
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -129,7 +78,6 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <AppContent />
-        <Toaster richColors position="top-right" /> {/* Toaster bileşenini ekleyin */}
       </AuthProvider>
     </LanguageProvider>
   );

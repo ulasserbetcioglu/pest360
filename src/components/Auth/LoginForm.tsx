@@ -24,6 +24,7 @@ const LoginForm: React.FC = () => {
 
   // Demo user suggestions
   const demoUsers = [
+    { email: 'admin@pest360.com', role: 'Admin', password: '123456' },
     { email: 'demo@elimspa.com', role: 'İlaçlama Firması', password: '123456' },
     { email: 'operator@elimspa.com', role: 'Operatör', password: '123456' },
     { email: 'musteri@otel.com', role: 'Müşteri', password: '123456' }
@@ -129,7 +130,7 @@ const LoginForm: React.FC = () => {
 
         {/* Demo Users */}
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Kullanıcılar (Admin için gerçek Supabase Auth kullanın):</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Kullanıcılar:</h3>
           <div className="space-y-2">
             {demoUsers.map((user, index) => (
               <div key={index} className="text-xs text-gray-600 bg-white p-2 rounded border">
@@ -138,12 +139,6 @@ const LoginForm: React.FC = () => {
                 <div>Şifre: {user.password}</div>
               </div>
             ))}
-          </div>
-          <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-xs text-blue-700">
-              <strong>Admin Girişi:</strong> Gerçek Supabase Auth kullanılıyor. 
-              Supabase Dashboard'dan admin kullanıcısı oluşturun.
-            </p>
           </div>
         </div>
       </div>
