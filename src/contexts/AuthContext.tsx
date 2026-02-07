@@ -37,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      setLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -57,10 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await supabase.auth.signOut();
             setUser(null);
           }
+        } else {
+          // Session yoksa da user'ı null yap
+          setUser(null);
         }
       } catch (e) {
         console.error('Başlatma hatası:', e);
+        setUser(null);
       } finally {
+        // Her durumda loading'i false yap
         setLoading(false);
       }
     };
