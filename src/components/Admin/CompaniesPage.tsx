@@ -54,7 +54,7 @@ const CompaniesPage: React.FC = () => {
       const formattedCompanies: Company[] = await Promise.all(
         (companiesData || []).map(async (company: any) => {
           const { count: operatorCount } = await supabase
-            .from('users')
+            .from('profiles')
             .select('*', { count: 'exact', head: true })
             .eq('company_id', company.id)
             .eq('role', 'operator');
@@ -72,7 +72,7 @@ const CompaniesPage: React.FC = () => {
             taxNumber: company.tax_number || '',
             authorizedPerson: company.authorized_person || '',
             isApproved: company.is_approved,
-            isDemo: company.is_demo,
+            isDemo: company.is_demo || false,
             registrationDate: company.created_at,
             trialEndDate: company.trial_end_date,
             operatorCount: operatorCount || 0,

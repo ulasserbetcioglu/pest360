@@ -77,12 +77,12 @@ const ApprovalsPage: React.FC = () => {
 
       if (companyError) throw companyError;
 
-      const { error: userError } = await supabase
-        .from('users')
+      const { error: profileError } = await supabase
+        .from('profiles')
         .update({ is_active: true })
         .eq('company_id', id);
 
-      if (userError) throw userError;
+      if (profileError) throw profileError;
 
       toast.success('Firma başarıyla onaylandı');
       loadPendingApprovals();

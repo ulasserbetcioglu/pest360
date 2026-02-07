@@ -586,7 +586,7 @@ const VisitDetails: React.FC<VisitDetailsProps> = ({ visitId }) => {
       
       // Get user data including company_id
       const { data: userData, error: userError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('id, company_id')
         .eq('id', user.id)
         .single();
@@ -679,7 +679,7 @@ const VisitDetails: React.FC<VisitDetailsProps> = ({ visitId }) => {
         } else {
           const { data: user } = await supabase.auth.getUser();
           const { data: userData } = await supabase
-            .from('users')
+            .from('profiles')
             .select('id, company_id')
             .eq('id', user.user?.id)
             .maybeSingle();

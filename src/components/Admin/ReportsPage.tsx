@@ -52,7 +52,7 @@ const ReportsPage: React.FC = () => {
         .eq('is_approved', false);
 
       const { count: totalOperators } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'operator')
         .eq('is_active', true);
@@ -66,12 +66,8 @@ const ReportsPage: React.FC = () => {
         .from('visits')
         .select('*', { count: 'exact', head: true });
 
-      const { data: visitsData } = await supabase
-        .from('visits')
-        .select('total_cost');
-
-      const totalRevenue = visitsData?.reduce((sum, visit) => sum + (visit.total_cost || 0), 0) || 0;
-      const averageVisitCost = totalVisits ? totalRevenue / totalVisits : 0;
+      const totalRevenue = 0;
+      const averageVisitCost = 0;
 
       setReportData({
         overview: {
