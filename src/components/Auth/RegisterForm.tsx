@@ -1,112 +1,111 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../hooks/useLanguage';
-import { UserPlus, Mail, Lock, User as UserIcon, Building2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { Building2, Mail, Lock, User, ShieldCheck } from 'lucide-react';
 
-interface RegisterFormProps {
-  onSuccess?: () => void;
-}
-
-const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
-  const { register, loading } = useAuth();
-  const { t } = useLanguage();
-  const [error, setError] = useState('');
+export default function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
     companyName: '',
-    role: 'company_admin' // Varsayılan rol
+    fullName: '',
+    email: '',
+    password: ''
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setLoading(true);
+
     try {
-      await register(formData);
-      if (onSuccess) onSuccess();
+      // 1. Önce Şirketi Oluştur (14 günlük deneme otomatik başlar)
+      const { data: company, error: compError } = await supabase
+        .from('companies')
+        .insert([{
+          name: formData.companyName,
+          email: formData.email,
+          authorized_person: formData.fullName,
+          status: 'pending', // Yönetici onayı gerekebilir veya direkt 'approved' yapın
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (compError) throw compError;
+
+      // 2. Auth Kullanıcısını "company_admin" Rolüyle Oluştur
+      const { error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            firstName: formData.fullName,
+            role: 'company_admin', // BURASI KRİTİK: Operatör değil, Firma Admini
+            companyId: company.id
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      alert('Kayıt başarılı! 14 günlük deneme süreniz tanımlandı. Lütfen giriş yapın.');
+      onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Kayıt sırasında bir hata oluştu');
+      alert('Kayıt hatası: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
-      <div>
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          Yeni Hesap Oluştur
-        </h2>
+    <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-gray-100">
+      <div className="text-center mb-8">
+        <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
+          <Building2 className="text-white" size={32} />
+        </div>
+        <h2 className="text-2xl font-black text-gray-800">Firma Kaydı</h2>
+        <p className="text-gray-500 text-sm mt-1">14 Gün Ücretsiz Deneme Başlatın</p>
       </div>
-      <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Ad</label>
-            <input
-              type="text"
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              value={formData.firstName}
-              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Soyad</label>
-            <input
-              type="text"
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              value={formData.lastName}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-            />
+
+      <form onSubmit={handleRegister} className="space-y-4">
+        <div>
+          <label className="text-xs font-bold text-gray-400 uppercase ml-1">Firma Adı</label>
+          <div className="relative">
+            <Building2 className="absolute left-4 top-4 text-gray-400" size={18} />
+            <input required className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 p-4 pl-12 rounded-2xl outline-none transition-all"
+              placeholder="Örn: Pest Kontrol Ltd." onChange={e => setFormData({...formData, companyName: e.target.value})} />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Firma Adı</label>
-          <input
-            type="text"
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            value={formData.companyName}
-            onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-          />
+          <label className="text-xs font-bold text-gray-400 uppercase ml-1">Yetkili Ad Soyad</label>
+          <div className="relative">
+            <User className="absolute left-4 top-4 text-gray-400" size={18} />
+            <input required className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 p-4 pl-12 rounded-2xl outline-none transition-all"
+              placeholder="Adınız Soyadınız" onChange={e => setFormData({...formData, fullName: e.target.value})} />
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">E-posta</label>
-          <input
-            type="email"
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
+          <label className="text-xs font-bold text-gray-400 uppercase ml-1">E-posta</label>
+          <div className="relative">
+            <Mail className="absolute left-4 top-4 text-gray-400" size={18} />
+            <input required type="email" className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 p-4 pl-12 rounded-2xl outline-none transition-all"
+              placeholder="firma@eposta.com" onChange={e => setFormData({...formData, email: e.target.value})} />
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Şifre</label>
-          <input
-            type="password"
-            required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          />
+          <label className="text-xs font-bold text-gray-400 uppercase ml-1">Şifre</label>
+          <div className="relative">
+            <Lock className="absolute left-4 top-4 text-gray-400" size={18} />
+            <input required type="password" title="En az 6 karakter" className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 p-4 pl-12 rounded-2xl outline-none transition-all"
+              placeholder="••••••" onChange={e => setFormData({...formData, password: e.target.value})} />
+          </div>
         </div>
 
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-        >
-          {loading ? 'Kaydediliyor...' : 'Kayıt Ol'}
+        <button disabled={loading} type="submit" className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2">
+          {loading ? 'Kaydediliyor...' : <><ShieldCheck size={20}/> Ücretsiz Denemeyi Başlat</>}
         </button>
       </form>
     </div>
   );
-};
-
-export default RegisterForm;
+}
