@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { User } from '../types';
+import bcrypt from 'bcryptjs';
 
 export interface LoginCredentials {
   email: string;
@@ -30,31 +31,28 @@ export const localAuth = {
   async login(credentials: LoginCredentials) {
     const { email, password } = credentials;
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (authError) {
-      throw new Error('E-posta veya şifre hatalı');
-    }
-
-    if (!authData.user) {
-      throw new Error('Kullanıcı bulunamadı');
-    }
-
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select(`
         *,
         companies (*)
       `)
-      .eq('id', authData.user.id)
+      .eq('email', email)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
-      throw new Error('Kullanıcı profili bulunamadı veya hesap aktif değil');
+      throw new Error('Kullanıcı bulunamadı veya hesap aktif değil');
+    }
+
+    if (!profile.password_hash) {
+      throw new Error('Geçersiz kullanıcı');
+    }
+
+    const isValidPassword = await bcrypt.compare(password, profile.password_hash);
+
+    if (!isValidPassword) {
+      throw new Error('E-posta veya şifre hatalı');
     }
 
     const userCompany = profile.companies as any;
@@ -67,6 +65,16 @@ export const localAuth = {
 
   async register(data: RegisterData) {
     const { email, password, firstName, lastName, phone, companyName, taxNumber, address, authorizedPerson } = data;
+
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingUser) {
+      throw new Error('Bu e-posta adresi zaten kullanımda');
+    }
 
     const { data: existingCompany } = await supabase
       .from('companies')
@@ -96,37 +104,14 @@ export const localAuth = {
       throw new Error('Firma kaydı oluşturulamadı: ' + companyError?.message);
     }
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          phone: phone,
-          role: 'company',
-          company_id: company.id,
-          is_active: false
-        }
-      }
-    });
-
-    if (authError) {
-      await supabase.from('companies').delete().eq('id', company.id);
-      throw new Error(authError.message || 'Kayıt oluşturulamadı');
-    }
-
-    if (!authData.user) {
-      await supabase.from('companies').delete().eq('id', company.id);
-      throw new Error('Kullanıcı oluşturulamadı');
-    }
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const { error: profileError } = await supabase
       .from('profiles')
-      .upsert({
-        id: authData.user.id,
+      .insert({
+        id: crypto.randomUUID(),
         email: email,
+        password_hash: passwordHash,
         role: 'company',
         first_name: firstName,
         last_name: lastName,
@@ -140,7 +125,7 @@ export const localAuth = {
       throw new Error('Kullanıcı profili oluşturulamadı: ' + profileError.message);
     }
 
-    return { user: authData.user, company };
+    return { company };
   },
 
   getSession(): LocalSession | null {

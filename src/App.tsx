@@ -8,6 +8,7 @@ import AdminDashboard from './components/Dashboard/AdminDashboard';
 import CompanyDashboard from './components/Dashboard/CompanyDashboard';
 import OperatorDashboard from './components/Dashboard/OperatorDashboard';
 import CompaniesPage from './components/Admin/CompaniesPage';
+import CreateCompanyPage from './components/Admin/CreateCompanyPage';
 import ApprovalsPage from './components/Admin/ApprovalsPage';
 import ReportsPage from './components/Admin/ReportsPage';
 import SettingsPage from './components/Admin/SettingsPage';
@@ -52,6 +53,8 @@ function AppContent() {
       switch (currentPath) {
         case '/companies':
           return <CompaniesPage />;
+        case '/create-company':
+          return <CreateCompanyPage />;
         case '/approvals':
           return <ApprovalsPage />;
         case '/reports':

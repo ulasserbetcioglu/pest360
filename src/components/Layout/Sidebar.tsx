@@ -11,7 +11,8 @@ import {
   Building2,
   UserCheck,
   ClipboardList,
-  LogOut
+  LogOut,
+  PlusCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         return [
           ...baseItems,
           { icon: Building2, label: t('nav.companies'), href: '/companies' },
+          { icon: PlusCircle, label: 'Firma Oluştur', href: '/create-company' },
           { icon: UserCheck, label: 'Onaylar', href: '/approvals' },
           { icon: FileText, label: t('nav.reports'), href: '/reports' },
           { icon: Settings, label: t('nav.settings'), href: '/settings' }

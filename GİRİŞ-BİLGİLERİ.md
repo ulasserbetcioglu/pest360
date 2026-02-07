@@ -1,34 +1,47 @@
 # Pest360 Giriş Bilgileri
 
+## Sistem Mimarisi
+
+### Auth Yapısı
+- **Admin**: Supabase Auth kullanır (@pest360.com email adresleri)
+- **Diğer Kullanıcılar**: Local auth (profiles tablosunda bcrypt ile hash'lenmiş şifre)
+
 ## Admin Kullanıcısı
 
 **E-posta:** admin@pest360.com
 **Şifre:** admin123
 
-## Test Verileri
+Admin panelde:
+- ✅ Tüm firmaları görüntüleme
+- ✅ Firma onaylama/reddetme
+- ✅ **YENİ: Firma oluşturma** (email + şifre ile)
+- ✅ Raporlar ve istatistikler
 
-Sistemde şu test firmaları bulunmaktadır:
+## Firma Oluşturma (Admin)
 
-1. **Test İlaçlama Ltd.**
-   - E-posta: test@ilaclamafirma.com
-   - Onay Durumu: Bekliyor
+Admin kullanıcısı artık doğrudan firma oluşturabilir:
+1. Sol menüden "Firma Oluştur" linkine tıklayın
+2. Firma bilgilerini doldurun
+3. Kullanıcı için email ve şifre belirleyin
+4. Oluştur butonuna tıklayın
 
-2. **Onaylı İlaçlama A.Ş.**
-   - E-posta: onay@ilaclamafirma.com
-   - Onay Durumu: Onaylandı
+**Önemli:** Admin tarafından oluşturulan firmalar otomatik olarak onaylı (is_approved = true) ve aktif (is_active = true) durumda olur.
 
-## Yeni Firma Kaydı
+## Yeni Firma Kaydı (Public)
 
 Yeni firmalar kayıt sayfasından kaydolabilir. Kayıt sonrası:
 - Firma admin onayı bekler (is_approved = false)
 - Kullanıcı hesabı pasif durumda olur (is_active = false)
 - Admin firma onayladığında her ikisi de aktif olur
+- Şifreler bcrypt ile hash'lenerek profiles tablosunda saklanır
+
+## Giriş Sistemi
+
+- **@pest360.com** email'leri -> Supabase Auth ile giriş
+- **Diğer email'ler** -> profiles tablosunda password_hash ile lokal giriş
 
 ## Sorun Giderme
 
-Eğer "Firmalar yüklenemedi" hatası alıyorsanız:
-
-1. Admin olarak giriş yaptığınızdan emin olun
-2. Tarayıcı konsolunu kontrol edin (F12)
-3. Sayfayı yenileyip tekrar deneyin
-4. localStorage'ı temizleyip tekrar giriş yapın
+1. localStorage'ı temizleyin: `localStorage.clear()`
+2. Sayfayı yenileyin
+3. Tekrar giriş yapın

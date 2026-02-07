@@ -45,47 +45,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const isAdminEmail = email.endsWith('@pest360.com');
 
-      if (authError) throw authError;
+      if (isAdminEmail) {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
 
-      if (!authData.user) {
-        throw new Error('Giriş başarısız');
+        if (authError) throw new Error('E-posta veya şifre hatalı');
+
+        if (!authData.user) {
+          throw new Error('Giriş başarısız');
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+
+        if (profileError || !profile) {
+          throw new Error('Kullanıcı profili bulunamadı');
+        }
+
+        const userObj: User = {
+          id: profile.id,
+          email: profile.email,
+          role: 'admin',
+          firstName: profile.first_name || 'Admin',
+          lastName: profile.last_name || 'User',
+          phone: profile.phone,
+          companyId: profile.company_id,
+          customerId: profile.customer_id,
+          isActive: true,
+          createdAt: new Date(profile.created_at),
+          updatedAt: new Date(profile.updated_at)
+        };
+
+        setUser(userObj);
+        localStorage.setItem('pest360_user', JSON.stringify(userObj));
+      } else {
+        const profile = await localAuth.login({ email, password });
+
+        const userObj: User = {
+          id: profile.id,
+          email: profile.email,
+          role: profile.role,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          phone: profile.phone,
+          companyId: profile.company_id,
+          customerId: profile.customer_id,
+          isActive: profile.is_active,
+          createdAt: new Date(profile.created_at),
+          updatedAt: new Date(profile.updated_at)
+        };
+
+        setUser(userObj);
+        localStorage.setItem('pest360_user', JSON.stringify(userObj));
       }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single();
-
-      if (profileError || !profile) {
-        throw new Error('Kullanıcı profili bulunamadı');
-      }
-
-      if (!profile.is_active && profile.role !== 'admin') {
-        throw new Error('Hesabınız henüz aktif değil. Admin onayı bekleniyor.');
-      }
-
-      const userObj: User = {
-        id: profile.id,
-        email: profile.email,
-        role: profile.role,
-        firstName: profile.first_name,
-        lastName: profile.last_name,
-        phone: profile.phone,
-        companyId: profile.company_id,
-        customerId: profile.customer_id,
-        isActive: profile.is_active,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at)
-      };
-
-      setUser(userObj);
-      localStorage.setItem('pest360_user', JSON.stringify(userObj));
     } catch (error) {
       throw error;
     } finally {
