@@ -20,43 +20,35 @@ function App() {
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        {showRegister ? (
-          <div className="w-full max-w-md">
-            <RegisterForm onSuccess={() => setShowRegister(false)} />
-            <button
-              onClick={() => setShowRegister(false)}
-              className="mt-4 w-full text-sm text-blue-600 hover:underline text-center"
-            >
-              Zaten hesabınız var mı? Giriş yapın
-            </button>
-          </div>
-        ) : (
-          <LoginForm onToggleRegister={() => setShowRegister(true)} />
-        )}
+    return showRegister ? (
+      <div className="w-full flex flex-col items-center">
+        <RegisterForm onSuccess={() => setShowRegister(false)} />
+        <button onClick={() => setShowRegister(false)} className="mt-4 text-blue-600 underline text-sm">
+          Geri Dön
+        </button>
       </div>
+    ) : (
+      <LoginForm onToggleRegister={() => setShowRegister(true)} />
     );
   }
 
   const renderDashboard = () => {
+    // Veritabanındaki 'role' sütunundaki değerlere göre:
     switch (user.role) {
       case 'admin':
         return <AdminDashboard />;
       case 'company_admin':
+      case 'company':
         return <CompanyDashboard />;
       case 'operator':
         return <OperatorDashboard />;
       default:
+        // Eğer rol tanınmıyorsa operatöre atar
         return <OperatorDashboard />;
     }
   };
 
-  return (
-    <Layout>
-      {renderDashboard()}
-    </Layout>
-  );
+  return <Layout>{renderDashboard()}</Layout>;
 }
 
 export default App;
