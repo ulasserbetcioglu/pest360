@@ -143,6 +143,9 @@ const CompanyDashboard: React.FC = () => {
           </h3>
           <div className="space-y-3">
             {[
+              { product: 'Biflex Ultra EC', current: '2.5 L', minimum: '5 L', urgency: 'critical' },
+              { product: 'Karate Zeon CS', current: '1 L', minimum: '3 L', urgency: 'warning' },
+              { product: 'Bayer Premise', current: '0.8 Kg', minimum: '2 Kg', urgency: 'critical' },
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
