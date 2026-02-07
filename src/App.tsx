@@ -11,10 +11,16 @@ function App() {
   const { user, loading } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
 
+  // Konsolda kontrol edelim (F12 ile bakabilirsin)
+  console.log("App State:", { user, loading });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-500 text-sm">Sistem Hazırlanıyor...</p>
+        </div>
       </div>
     );
   }
@@ -25,11 +31,8 @@ function App() {
         {showRegister ? (
           <div className="w-full max-w-md">
             <RegisterForm onSuccess={() => setShowRegister(false)} />
-            <button
-              onClick={() => setShowRegister(false)}
-              className="mt-4 w-full text-sm text-blue-600 hover:underline text-center"
-            >
-              Zaten hesabınız var mı? Giriş yapın
+            <button onClick={() => setShowRegister(false)} className="mt-4 w-full text-blue-600 underline text-sm">
+              Giriş Yap
             </button>
           </div>
         ) : (
@@ -40,24 +43,15 @@ function App() {
   }
 
   const renderDashboard = () => {
-    // Veritabanı rollerine göre tam eşleşme
     switch (user.role) {
-      case 'admin':
-        return <AdminDashboard />;
-      case 'company_admin':
-        return <CompanyDashboard />;
-      case 'operator':
-        return <OperatorDashboard />;
-      default:
-        return <OperatorDashboard />;
+      case 'admin': return <AdminDashboard />;
+      case 'company_admin': return <CompanyDashboard />;
+      case 'operator': return <OperatorDashboard />;
+      default: return <OperatorDashboard />;
     }
   };
 
-  return (
-    <Layout>
-      {renderDashboard()}
-    </Layout>
-  );
+  return <Layout>{renderDashboard()}</Layout>;
 }
 
 export default App;
