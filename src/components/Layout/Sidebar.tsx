@@ -14,7 +14,12 @@ import {
   LogOut
 } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { t } = useLanguage();
   const { user, logout } = useAuth();
 
@@ -68,7 +73,19 @@ const Sidebar: React.FC = () => {
   const menuItems = getMenuItems();
 
   return (
-    <aside className="bg-white w-64 min-h-screen shadow-lg">
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      <aside className={`
+        bg-white w-64 min-h-screen shadow-lg fixed lg:static z-50 transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
       <div className="p-6">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -84,7 +101,11 @@ const Sidebar: React.FC = () => {
             <li key={item.href}>
               <a
                 href={item.href}
-                className="flex items-center space-x-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  window.location.pathname === item.href
+                    ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                }`}
               >
                 <item.icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
@@ -104,6 +125,7 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
     </aside>
+    </>
   );
 };
 

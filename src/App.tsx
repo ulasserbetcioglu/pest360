@@ -7,6 +7,17 @@ import RegisterForm from './components/Auth/RegisterForm';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
 import CompanyDashboard from './components/Dashboard/CompanyDashboard';
 import OperatorDashboard from './components/Dashboard/OperatorDashboard';
+import CompaniesPage from './components/Admin/CompaniesPage';
+import ApprovalsPage from './components/Admin/ApprovalsPage';
+import ReportsPage from './components/Admin/ReportsPage';
+import SettingsPage from './components/Admin/SettingsPage';
+import VisitsPage from './components/Company/VisitsPage';
+import CustomersPage from './components/Company/CustomersPage';
+import OperatorsPage from './components/Company/OperatorsPage';
+import CalendarPage from './components/Company/CalendarPage';
+import InventoryPage from './components/Company/InventoryPage';
+import CompanyReportsPage from './components/Company/CompanyReportsPage';
+import CompanySettingsPage from './components/Company/CompanySettingsPage';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -34,11 +45,43 @@ function AppContent() {
   }
 
   const getDashboardComponent = () => {
+    // Admin routes
+    if (user.role === 'admin') {
+      switch (currentPath) {
+        case '/companies':
+          return <CompaniesPage />;
+        case '/approvals':
+          return <ApprovalsPage />;
+        case '/reports':
+          return <ReportsPage />;
+        case '/settings':
+          return <SettingsPage />;
+        default:
+          return <AdminDashboard />;
+      }
+    }
+
+    // Role-based dashboards
     switch (user.role) {
-      case 'admin':
-        return <AdminDashboard />;
       case 'company':
-        return <CompanyDashboard />;
+        switch (currentPath) {
+          case '/visits':
+            return <VisitsPage />;
+          case '/calendar':
+            return <CalendarPage />;
+          case '/customers':
+            return <CustomersPage />;
+          case '/operators':
+            return <OperatorsPage />;
+          case '/inventory':
+            return <InventoryPage />;
+          case '/reports':
+            return <CompanyReportsPage />;
+          case '/settings':
+            return <CompanySettingsPage />;
+          default:
+            return <CompanyDashboard />;
+        }
       case 'operator':
         return <OperatorDashboard />;
       case 'customer':
