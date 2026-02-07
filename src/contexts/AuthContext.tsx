@@ -18,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Profil çekiliyor:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Profil çekilirken SQL hatası:', error.message);
         return null;
       }
+      console.log('Profil başarıyla çekildi:', data);
       return data;
     } catch (err) {
       console.error('Beklenmedik hata:', err);
@@ -36,13 +38,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     const initAuth = async () => {
+      console.log('🔵 Auth başlatılıyor...');
+      
+      // Timeout ekleyelim - 5 saniye içinde cevap gelmezse loading'i kapat
+      const timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.warn('⚠️ Supabase bağlantısı zaman aşımına uğradı, loading kapatılıyor...');
+          setLoading(false);
+        }
+      }, 5000);
+
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Session hatası:', error);
+          throw error;
+        }
+
+        console.log('Session durumu:', session ? '✅ Var' : '❌ Yok');
         
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
-          if (profile) {
+          if (profile && mounted) {
             setUser({
               id: session.user.id,
               email: session.user.email!,
@@ -51,27 +72,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               lastName: profile.last_name,
               companyId: profile.company_id
             } as any);
-          } else {
-            // Oturum var ama profil yoksa kullanıcıyı temizle
+            console.log('✅ Kullanıcı set edildi:', profile.role);
+          } else if (mounted) {
+            console.warn('⚠️ Profil bulunamadı, oturum kapatılıyor');
             await supabase.auth.signOut();
             setUser(null);
           }
-        } else {
-          // Session yoksa da user'ı null yap
+        } else if (mounted) {
+          console.log('ℹ️ Session yok, user null yapılıyor');
           setUser(null);
         }
       } catch (e) {
-        console.error('Başlatma hatası:', e);
-        setUser(null);
+        console.error('❌ Başlatma hatası:', e);
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        // Her durumda loading'i false yap
-        setLoading(false);
+        clearTimeout(timeoutId);
+        if (mounted) {
+          console.log('✅ Loading false yapılıyor');
+          setLoading(false);
+        }
       }
     };
 
     initAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔔 Auth event:', event);
+      
+      if (!mounted) return;
+
       if (event === 'SIGNED_IN' && session?.user) {
         setLoading(true);
         const profile = await fetchUserProfile(session.user.id);
@@ -92,7 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => authListener.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
