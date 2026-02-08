@@ -22,9 +22,7 @@ const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const getMenuItems = () => {
-    const baseItems = [
-      { icon: Home, label: t('nav.dashboard'), href: '/dashboard' }
-    ];
+    const baseItems = [{ icon: Home, label: t('nav.dashboard'), href: '/dashboard' }];
 
     switch (user?.role) {
       case 'admin':
@@ -62,6 +60,7 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
+      {/* Mobile Menu Button */}
       <button
         onClick={() => setIsOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-gray-900 text-white rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
@@ -69,6 +68,7 @@ const Sidebar: React.FC = () => {
         <Menu size={20} />
       </button>
 
+      {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 z-40 lg:hidden backdrop-blur-sm"
@@ -76,12 +76,14 @@ const Sidebar: React.FC = () => {
         />
       )}
 
+      {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 z-50 h-full bg-white border-r border-gray-200 transition-transform duration-300 w-64 lg:translate-x-0 lg:static ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
+          {/* Header */}
           <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
@@ -98,10 +100,11 @@ const Sidebar: React.FC = () => {
             </button>
           </div>
 
+          {/* Navigation */}
           <nav className="flex-1 overflow-y-auto px-3 py-4">
             <ul className="space-y-1">
               {menuItems.map((item) => {
-                const ItemIcon = item.icon;
+                const Icon = item.icon;
                 return (
                   <li key={item.href}>
                     
@@ -109,7 +112,7 @@ const Sidebar: React.FC = () => {
                       onClick={() => setIsOpen(false)}
                       className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors group"
                     >
-                      <ItemIcon className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
+                      <Icon className="w-5 h-5 text-gray-400 group-hover:text-gray-600" />
                       <span>{item.label}</span>
                     </a>
                   </li>
@@ -118,6 +121,7 @@ const Sidebar: React.FC = () => {
             </ul>
           </nav>
 
+          {/* Footer */}
           <div className="p-4 border-t border-gray-200">
             <div className="px-3 py-2 mb-3 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-500 mb-0.5">Kullanıcı</p>
