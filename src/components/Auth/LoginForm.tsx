@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Mail, Lock, LogIn, AlertTriangle, Eye, EyeOff, Loader2, ArrowRight 
-} from 'lucide-react';
+import { Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function LoginForm({ onToggleRegister }: { onToggleRegister: () => void }) {
   const { login } = useAuth();
@@ -16,116 +14,96 @@ export default function LoginForm({ onToggleRegister }: { onToggleRegister: () =
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
       await login(email, password);
     } catch (err: any) {
-      setError(err.message || 'Giriş yapılamadı. Bilgilerinizi kontrol edin.');
+      setError(err.message || 'Giriş başarısız.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh] px-4">
-      <div className="w-full max-w-md bg-white rounded-[2rem] shadow-2xl shadow-blue-900/10 border border-slate-100 overflow-hidden">
+    <div className="min-h-screen w-full bg-white flex flex-col justify-center px-6 sm:px-0">
+      
+      <div className="w-full max-w-sm mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         
-        {/* Header Alanı */}
-        <div className="px-8 pt-10 pb-6 text-center">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <Lock size={28} />
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Tekrar Hoş Geldiniz</h2>
-          <p className="text-slate-400 font-medium text-sm mt-2">
-            Hesabınıza erişmek için bilgilerinizi girin.
-          </p>
+        {/* HEADER: Sadece Logo ve Başlık */}
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pest360</h1>
+          <p className="text-slate-500 text-sm">Hesabınıza giriş yapın.</p>
         </div>
 
-        {/* Hata Mesajı */}
-        {error && (
-          <div className="mx-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-in slide-in-from-top-2 duration-300">
-            <AlertTriangle className="text-red-600 shrink-0 mt-0.5" size={18} />
-            <p className="text-xs font-bold text-red-600 leading-relaxed">{error}</p>
-          </div>
-        )}
-
-        {/* Form Alanı */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+        {/* FORM ALANI */}
+        <form onSubmit={handleSubmit} className="space-y-6">
           
-          {/* E-posta Input */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">E-posta Adresi</label>
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">
-                <Mail size={20} />
-              </div>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-blue-500 text-slate-900 p-4 pl-12 rounded-2xl outline-none font-bold text-sm transition-all placeholder:text-slate-300"
-                placeholder="ornek@sirket.com"
-              />
-            </div>
+          {/* E-POSTA */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-900 uppercase tracking-wider">E-posta</label>
+            <input
+              type="email"
+              required
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-900 font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-slate-900 transition-all outline-none"
+              placeholder="isim@sirket.com"
+            />
           </div>
 
-          {/* Şifre Input */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center px-1">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Şifre</label>
-              <button type="button" className="text-[10px] font-bold text-blue-600 hover:underline">Şifremi Unuttum?</button>
+          {/* ŞİFRE */}
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <label className="block text-xs font-medium text-slate-900 uppercase tracking-wider">Şifre</label>
+              <button type="button" className="text-xs text-slate-500 hover:text-slate-900">Unuttum?</button>
             </div>
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">
-                <Lock size={20} />
-              </div>
+            <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border-2 border-transparent focus:bg-white focus:border-blue-500 text-slate-900 p-4 pl-12 pr-12 rounded-2xl outline-none font-bold text-sm transition-all placeholder:text-slate-300"
+                className="w-full bg-slate-50 border-none rounded-xl px-4 py-4 text-slate-900 font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-slate-900 transition-all outline-none pr-12"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          {/* Giriş Butonu */}
+          {/* HATA MESAJI (Minimal) */}
+          {error && (
+            <div className="flex items-center gap-2 text-red-600 text-sm font-medium bg-red-50 p-3 rounded-lg">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
+          {/* BUTON: Siyah/Koyu, Net */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-xl shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-wide text-sm mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-slate-900 hover:bg-black text-white py-4 rounded-xl font-bold text-sm transition-transform active:scale-[0.98] disabled:opacity-70 flex justify-center items-center"
           >
-            {loading ? (
-              <Loader2 size={20} className="animate-spin" />
-            ) : (
-              <>
-                Giriş Yap <ArrowRight size={18} />
-              </>
-            )}
+            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Giriş Yap'}
           </button>
         </form>
 
-        {/* Footer / Kayıt Ol Linki */}
-        <div className="bg-slate-50 p-6 text-center border-t border-slate-100">
-          <p className="text-slate-500 text-xs font-bold">
+        {/* FOOTER */}
+        <div className="text-center">
+          <p className="text-sm text-slate-500">
             Hesabınız yok mu?{' '}
-            <button
-              onClick={onToggleRegister}
-              className="text-blue-600 hover:text-blue-700 font-black uppercase tracking-wide hover:underline ml-1"
-            >
-              Firma Kaydı Oluştur
+            <button onClick={onToggleRegister} className="text-slate-900 font-bold hover:underline">
+              Kayıt Ol
             </button>
           </p>
         </div>
+
       </div>
     </div>
   );
