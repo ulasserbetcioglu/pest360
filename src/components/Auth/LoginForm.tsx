@@ -7,13 +7,14 @@ export default function LoginForm({ onToggleRegister }: { onToggleRegister: () =
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     try {
       await login(email, password);
     } catch (err: any) {
@@ -24,142 +25,156 @@ export default function LoginForm({ onToggleRegister }: { onToggleRegister: () =
   };
 
   return (
-    // h-screen ve w-full ile ekranı zorla kaplatıyoruz
-    <div className="flex w-full h-screen bg-white overflow-hidden">
-      
-      {/* SOL TARAFI (Marka Alanı) 
-          DÜZELTME: 'lg:flex' yerine 'md:flex' yaptık. 
-          Artık tablet ve dar preview ekranlarında da bu alan görünecek. 
-      */}
-      <div className="hidden md:flex w-1/2 bg-zinc-950 relative flex-col justify-between p-12 text-white">
-        
-        {/* Arka Plan Deseni (CSS ile) */}
-        <div className="absolute inset-0 opacity-20" 
-             style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
+    <div className="min-h-screen w-full flex flex-col lg:flex-row">
+      {/* SOL TARAFI (Marka Alanı) - Masaüstünde görünür */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 relative overflow-hidden">
+        {/* Arka Plan Deseni */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
         </div>
-        
+
         {/* Dekoratif Gradient */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/30 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]"></div>
 
-        {/* Logo Alanı */}
-        <div className="relative z-10 flex items-center gap-2">
-          <div className="bg-white text-black p-2 rounded-lg">
-            <Command size={24} />
+        {/* İçerik */}
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+          {/* Logo Alanı */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+              <Command className="w-6 h-6 text-zinc-900" />
+            </div>
+            <span className="text-2xl font-bold text-white">Pest360</span>
           </div>
-          <span className="text-xl font-bold tracking-tight">Pest360</span>
-        </div>
 
-        {/* Orta Mesaj */}
-        <div className="relative z-10 space-y-6 max-w-md">
-          <h1 className="text-4xl md:text-5xl font-medium tracking-tighter leading-tight">
-            İşinizi yönetmenin <br/>
-            <span className="text-zinc-500">en akıllı yolu.</span>
-          </h1>
-          <ul className="space-y-3 text-zinc-400">
-            <li className="flex items-center gap-3">
-              <CheckCircle2 className="text-blue-500" size={20} />
-              <span>Saha ekiplerini canlı takip et</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <CheckCircle2 className="text-blue-500" size={20} />
-              <span>Müşteri ziyaretlerini planla</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <CheckCircle2 className="text-blue-500" size={20} />
-              <span>Raporları otomatik oluştur</span>
-            </li>
-          </ul>
-        </div>
+          {/* Orta Mesaj */}
+          <div className="space-y-8">
+            <h1 className="text-5xl font-bold text-white leading-tight">
+              İşinizi yönetmenin<br />en akıllı yolu.
+            </h1>
+            
+            <div className="space-y-4">
+              {[
+                'Saha ekiplerini canlı takip et',
+                'Müşteri ziyaretlerini planla',
+                'Raporları otomatik oluştur'
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                  <span className="text-zinc-200 text-lg">{feature}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        {/* Footer */}
-        <div className="relative z-10 text-zinc-600 text-xs font-medium">
-          © 2026 Pest360 Inc. v2.4.0
+          {/* Footer */}
+          <div className="text-zinc-400 text-sm">
+            © 2026 Pest360 Inc. v2.4.0
+          </div>
         </div>
       </div>
 
-      {/* SAĞ TARAF (Form Alanı) - Her zaman görünür */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 bg-white">
-        <div className="w-full max-w-[380px] space-y-8">
-          
+      {/* SAĞ TARAF (Form Alanı) */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-zinc-50">
+        <div className="w-full max-w-md space-y-8">
           {/* Mobil Logo (Sadece mobilde görünür) */}
-          <div className="md:hidden mb-8">
-            <div className="flex items-center gap-2 text-zinc-900">
-              <div className="bg-zinc-900 text-white p-2 rounded-lg">
-                <Command size={20} />
-              </div>
-              <span className="text-lg font-bold tracking-tight">Pest360</span>
+          <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center">
+              <Command className="w-6 h-6 text-white" />
             </div>
+            <span className="text-2xl font-bold text-zinc-900">Pest360</span>
           </div>
 
-          <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">Giriş Yap</h2>
-            <p className="text-zinc-500 text-sm">Devam etmek için hesap bilgilerinizi girin.</p>
+          {/* Form Başlık */}
+          <div className="text-center lg:text-left">
+            <h2 className="text-3xl font-bold text-zinc-900">Giriş Yap</h2>
+            <p className="mt-2 text-zinc-600">Devam etmek için hesap bilgilerinizi girin.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-medium rounded-lg flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse"/>
-                {error}
-              </div>
-            )}
+          {/* Hata Mesajı */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-900">E-posta</label>
-                <div className="relative group">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" size={18} />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl focus:ring-2 focus:ring-zinc-900 focus:border-transparent block w-full pl-10 p-3 outline-none transition-all placeholder:text-zinc-300"
-                    placeholder="isim@sirket.com"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                   <label className="text-xs font-medium text-zinc-900">Şifre</label>
-                   <button type="button" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">Şifremi unuttum</button>
-                </div>
-                <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-zinc-900 transition-colors" size={18} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl focus:ring-2 focus:ring-zinc-900 focus:border-transparent block w-full pl-10 pr-10 p-3 outline-none transition-all placeholder:text-zinc-300"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* E-posta */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-zinc-700 mb-2">
+                E-posta
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl focus:ring-2 focus:ring-zinc-900 focus:border-transparent pl-10 p-3 outline-none transition-all placeholder:text-zinc-300"
+                  placeholder="isim@sirket.com"
+                />
               </div>
             </div>
 
+            {/* Şifre */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-zinc-700">
+                  Şifre
+                </label>
+                <a href="#" className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors">
+                  Şifremi unuttum
+                </a>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-white border border-zinc-200 text-zinc-900 text-sm rounded-xl focus:ring-2 focus:ring-zinc-900 focus:border-transparent pl-10 pr-10 p-3 outline-none transition-all placeholder:text-zinc-300"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Giriş Butonu */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-black text-white font-medium py-3.5 px-4 rounded-xl transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-zinc-200"
+              className="w-full bg-zinc-900 text-white font-medium py-3 px-4 rounded-xl hover:bg-zinc-800 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
-              {loading ? 'Giriş Yapılıyor...' : <>Giriş Yap <ArrowRight size={16} /></>}
+              {loading ? 'Giriş Yapılıyor...' : (
+                <>
+                  Giriş Yap
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </form>
 
-          <div className="text-center">
-             <button onClick={onToggleRegister} className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors">
-               Hesabınız yok mu? <span className="font-semibold text-zinc-900 underline decoration-zinc-300 underline-offset-4">Kayıt Ol</span>
-             </button>
-          </div>
+          {/* Kayıt Linki */}
+          <p className="text-center text-sm text-zinc-600">
+            Hesabınız yok mu?{' '}
+            <button
+              onClick={onToggleRegister}
+              className="font-medium text-zinc-900 hover:underline"
+            >
+              Kayıt Ol
+            </button>
+          </p>
         </div>
       </div>
     </div>
